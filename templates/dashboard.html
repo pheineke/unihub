@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | RPTU Students Hub{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-th-large me-2"></i> Deine Apps</h2>
+    <a href="/store" class="btn btn-primary"><i class="fas fa-plus me-1"></i> App hinzufügen</a>
+</div>
+
+<div class="row" id="dashboard-apps">
+    <!-- Apps will be dynamically loaded here by JavaScript -->
+    <div class="col-12 py-5 text-center" id="empty-state" style="display: none;">
+        <i class="fas fa-box-open fs-1 text-muted mb-3"></i>
+        <h4 class="text-muted">Noch keine Apps installiert</h4>
+        <p class="text-muted">Gehe in den App Store, um Tools zu deinem Dashboard hinzuzufügen.</p>
+        <a href="/store" class="btn btn-outline-primary mt-2">Zum App Store</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const installedAppIds = getInstalledApps();
+        const container = document.getElementById('dashboard-apps');
+        const emptyState = document.getElementById('empty-state');
+
+        if (installedAppIds.length === 0) {
+            emptyState.style.display = 'block';
+        } else {
+            installedAppIds.forEach(id => {
+                if (appsInfo[id]) {
+                    const app = appsInfo[id];
+                    const appCard = document.createElement('div');
+                    appCard.className = 'col-md-4 col-sm-6 mb-4';
+                    appCard.innerHTML = `
+                        <div class="app-card p-4 text-center">
+                            <i class="fas ${app.icon} app-icon"></i>
+                            <h4>${app.name}</h4>
+                            <p class="text-muted small flex-grow-1">${app.description}</p>
+                            <div class="d-flex gap-2 mt-3">
+                                <a href="${app.url}" class="btn btn-primary flex-grow-1">Öffnen</a>
+                                <button class="btn btn-outline-danger" onclick="removeApp('${id}', this)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(appCard);
+                }
+            });
+        }
+    });
+
+    function removeApp(id, btnElement) {
+        if(confirm('Möchtest du diese App wirklich vom Dashboard entfernen?')) {
+            uninstallApp(id);
+            const card = btnElement.closest('.col-md-4');
+            card.remove();
+            
+            if (getInstalledApps().length === 0) {
+                document.getElementById('empty-state').style.display = 'block';
+            }
+        }
+    }
+</script>
+{% endblock %}

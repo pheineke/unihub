@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}App Store | RPTU Students Hub{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-5 mt-3">
+    <div class="col-md-8">
+        <h2><i class="fas fa-store me-2"></i> RPTU App Store</h2>
+        <p class="text-muted lead">Entdecke Werkzeuge, die dir im Studium helfen.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="/" class="btn btn-outline-secondary"><i class="fas fa-home me-1"></i> Zurück zum Dashboard</a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Kategorie: Studium -->
+    <div class="col-12 mb-4">
+        <h4 class="border-bottom pb-2 text-primary">Studium & Organisation</h4>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="app-card text-center p-4">
+            <i class="fas fa-calculator app-icon"></i>
+            <h4>Notenrechner</h4>
+            <p class="text-muted small flex-grow-1">Dein persönlicher ECTS- und GPA-Tracker für das Informatikstudium mit allen Pflicht- und Wahlmodulen.</p>
+            
+            <button class="btn btn-primary mt-3 w-100 install-btn" data-appid="notenrechner">
+                <i class="fas fa-plus me-1"></i> Installieren
+            </button>
+        </div>
+    </div>
+    
+    <!-- Platzhalter für zukünftige Apps -->
+    <div class="col-md-4 mb-4">
+        <div class="app-card text-center p-4" style="opacity: 0.6;">
+            <i class="fas fa-calendar-alt app-icon"></i>
+            <h4>Stundenplan (Coming Soon)</h4>
+            <p class="text-muted small flex-grow-1">Schneller Import und farbliche Übersicht deiner wöchentlichen Vorlesungen und Übungen.</p>
+            
+            <button class="btn btn-secondary mt-3 w-100" disabled>
+                Demnächst verfügbar
+            </button>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="app-card text-center p-4" style="opacity: 0.6;">
+            <i class="fas fa-utensils app-icon"></i>
+            <h4>Mensa-Plan (Coming Soon)</h4>
+            <p class="text-muted small flex-grow-1">Was gibt's heute? Der aktuelle Speiseplan der Mensa Kaiserslautern auf einen Blick.</p>
+            
+            <button class="btn btn-secondary mt-3 w-100" disabled>
+                Demnächst verfügbar
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const installedAppIds = getInstalledApps();
+        
+        document.querySelectorAll('.install-btn').forEach(btn => {
+            const appId = btn.getAttribute('data-appid');
+            
+            // Initial state based on installation
+            if (installedAppIds.includes(appId)) {
+                btn.innerHTML = '<i class="fas fa-check me-1"></i> Installiert';
+                btn.classList.replace('btn-primary', 'btn-success');
+                btn.disabled = true;
+            }
+            
+            // Handle fresh install click
+            btn.addEventListener('click', function() {
+                installApp(appId);
+                this.innerHTML = '<i class="fas fa-check me-1"></i> Installiert';
+                this.classList.replace('btn-primary', 'btn-success');
+                this.disabled = true;
+                
+                // Show floating notification
+                const toast = document.createElement('div');
+                toast.className = 'position-fixed bottom-0 end-0 p-3';
+                toast.style.zIndex = '5';
+                toast.innerHTML = `
+                    <div class="toast show align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                      <div class="d-flex">
+                        <div class="toast-body">
+                          App erfolgreich zum Dashboard hinzugefügt!
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close" onclick="this.closest('.toast').remove()"></button>
+                      </div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => { if(toast.parentNode) toast.remove(); }, 3000);
+            });
+        });
+    });
+</script>
+{% endblock %}

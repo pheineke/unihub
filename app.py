@@ -45,8 +45,16 @@ DEFAULT_COURSES = [
 ]
 
 @app.route("/")
-def index():
-    return render_template("index.html", default_courses=DEFAULT_COURSES)
+def dashboard():
+    return render_template("dashboard.html")
+
+@app.route("/store")
+def store():
+    return render_template("store.html")
+
+@app.route("/app/notenrechner")
+def notenrechner():
+    return render_template("notenrechner.html", default_courses=DEFAULT_COURSES)
 
 @app.route("/api/calculate", methods=["POST"])
 def calculate():
