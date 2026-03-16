@@ -313,8 +313,10 @@
                         <div class="stat-circle" id="res_gpa">-</div>
                         <div class="small fw-bold">Gesamtschnitt</div>
                     </div>
-                    <div class="col-6">
-                        <div class="stat-circle" style="background:var(--rptu-red)" id="res_ects">0</div>
+                    <div class="col-6 d-flex flex-column align-items-center">
+                        <div class="position-relative d-flex justify-content-center align-items-center mb-1" id="ects_progress_circle" style="width: 70px; height: 70px; border-radius: 50%; background: conic-gradient(var(--rptu-blue) 0%, #eee 0); transition: background 0.3s;">
+                            <div class="stat-circle position-absolute" id="res_ects" style="width: 58px; height: 58px; background: white; color: var(--rptu-dark); z-index: 1;">0</div>
+                        </div>
                         <div class="small fw-bold">ECTS (von 180)</div>
                     </div>
                 </div>
@@ -463,15 +465,22 @@
             if(macro.title.includes("Wahlpflichtbereich")) macroDivPercent = Math.min(100, Math.round((macroPassedEcts / 16) * 100));
             if(macro.title.includes("Wahlbereich")) macroDivPercent = Math.min(100, Math.round((macroPassedEcts / 32) * 100));
 
+            let macroBorderColor = "var(--bs-danger)"; // red
+            if (macroDivPercent >= 100) {
+                macroBorderColor = "var(--bs-success)";
+            } else if (macroDivPercent > 0) {
+                macroBorderColor = "var(--bs-warning)";
+            }
+
             macroDiv.innerHTML = `
-                <div class="p-3 bg-white rounded border shadow-sm mb-3 position-relative overflow-hidden" data-bs-toggle="collapse" data-bs-target="#${macroId}" aria-expanded="${isMacroOpen}" style="cursor: pointer; border-left: 6px solid var(--rptu-blue) !important; transition: all 0.2s;">
+                <div class="p-3 bg-white rounded border shadow-sm mb-3 position-relative overflow-hidden" data-bs-toggle="collapse" data-bs-target="#${macroId}" aria-expanded="${isMacroOpen}" style="cursor: pointer; border-left: 6px solid ${macroBorderColor} !important; transition: all 0.2s;">
                     <div class="d-flex justify-content-between align-items-center w-100 flex-wrap">
                         <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
-                            <h2 class="h5 m-0 text-uppercase fw-bold" style="color: var(--rptu-blue)">
+                            <h2 class="h5 m-0 text-uppercase fw-bold" style="color: var(--rptu-dark)">
                                 ${macro.title} 
                             </h2>
                             <div class="d-flex align-items-center gap-2">
-                                <span class="badge" style="background-color: var(--rptu-red); font-size: 0.85rem;">${macroBadgeText}</span>
+                                <span class="badge" style="background-color: ${macroBorderColor}; font-size: 0.85rem; color: ${macroBorderColor === 'var(--bs-warning)' ? '#000' : '#fff'};">${macroBadgeText}</span>
                                 ${editBtnHtml}
                             </div>
                         </div>
@@ -479,7 +488,7 @@
                     </div>
                     <!-- Micro Progress Bar -->
                     <div class="progress position-absolute bottom-0 start-0 w-100 rounded-0" style="height: 4px;">
-                        <div class="progress-bar" role="progressbar" style="width: ${macroDivPercent}%; background-color: var(--rptu-blue);"></div>
+                        <div class="progress-bar" role="progressbar" style="width: ${macroDivPercent}%; background-color: ${macroBorderColor};"></div>
                     </div>
                 </div>
                 <div id="${macroId}" class="collapse ${isMacroOpen ? 'show' : ''} px-2">
@@ -501,10 +510,20 @@
                 let passedEcts = sectionCourses.filter(c => c.status === 'bestanden').reduce((sum, c) => sum + (parseFloat(c.ects) || 0), 0);
                 
                 let limitBadge = `<span class="badge bg-secondary ms-1 text-white" style="font-size: 0.75rem;" title="Gesamt">von ${totalEcts} LP</span>`;
+                let sectionMaxEcts = totalEcts;
                 if(type.startsWith("Vertiefung")) {
                     limitBadge = `<span class="badge bg-secondary ms-1 text-white" style="font-size: 0.75rem;" title="Mindestanforderung">min. 16 LP</span>`;
+                    sectionMaxEcts = 16;
                 } else if(type === "Ergänzung") {
                     limitBadge = `<span class="badge bg-secondary ms-1 text-white" style="font-size: 0.75rem;" title="Maximal anrechenbar">max. 32 LP</span>`;
+                    sectionMaxEcts = 32;
+                }
+                
+                let sectionColor = "var(--bs-danger)";
+                if (passedEcts >= sectionMaxEcts && sectionMaxEcts > 0) {
+                    sectionColor = "var(--bs-success)";
+                } else if (passedEcts > 0) {
+                    sectionColor = "var(--bs-warning)";
                 }
 
                 let sectionId = `collapse${macroIdx}-${sectionIdx}`;
@@ -512,12 +531,13 @@
                 
                 const sectionDiv = document.createElement("div");
                 sectionDiv.className = "section-card mb-3";
+                sectionDiv.style.borderLeft = `5px solid ${sectionColor}`;
                 // Let's use a nested visual style
                 sectionDiv.innerHTML = `
                     <div class="p-2 mb-2 bg-light rounded shadow-sm d-flex justify-content-between align-items-center flex-wrap" data-bs-toggle="collapse" data-bs-target="#${sectionId}" aria-expanded="${isSectionOpen}" style="cursor: pointer; transition: background 0.2s;">
-                        <h3 class="m-0 d-flex flex-wrap align-items-center gap-2" style="font-size: 1.1rem; color: var(--rptu-blue);">
+                        <h3 class="m-0 d-flex flex-wrap align-items-center gap-2" style="font-size: 1.1rem; color: var(--rptu-dark);">
                             ${type} 
-                            <span class="badge bg-success text-white" style="font-size: 0.75rem;" title="Bestanden">${passedEcts} LP</span>
+                            <span class="badge text-white" style="background-color: ${sectionColor}; font-size: 0.75rem; color: ${sectionColor === 'var(--bs-warning)' ? '#000 !important' : '#fff !important'};" title="Bestanden">${passedEcts} LP</span>
                             ${limitBadge}
                         </h3>
                         <i class="fas fa-chevron-down text-muted mt-2 mt-md-0" style="transition: transform 0.3s;" id="icon-${sectionId}"></i>
@@ -634,7 +654,18 @@
         const result = await response.json();
         
         document.getElementById("res_gpa").innerText = result.overall_gpa !== 0 ? result.overall_gpa.toFixed(2) : "-";
-        document.getElementById("res_ects").innerText = result.total_ects_passed;
+        
+        let totalEcts = result.total_ects_passed;
+        document.getElementById("res_ects").innerText = totalEcts;
+        
+        // Update ECTS Progress Circle
+        let ectsPercent = Math.min(100, (totalEcts / 180) * 100);
+        let circleColor = "var(--bs-danger)";
+        if(ectsPercent >= 100) circleColor = "var(--bs-success)";
+        else if(ectsPercent > 0) circleColor = "var(--bs-warning)";
+        
+        document.getElementById("ects_progress_circle").style.background = `conic-gradient(${circleColor} ${ectsPercent}%, #eee 0)`;
+        
         document.getElementById("res_graded").innerText = result.total_ects_graded;
         
         const typeList = document.getElementById("res_by_type");
@@ -745,6 +776,7 @@
     }
 
     renderSections();
+    calculateGPA();
 
     // Modal logic for Vertiefung
     function openVertiefungModal(e) {
