@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Pomodoro Timer | RPTU Students Hub{% endblock %}
+
+{% block head %}
+<style>
+    .timer-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 40px;
+        text-align: center;
+        max-width: 500px;
+        margin: 0 auto;
+        border-top: 5px solid var(--rptu-blue);
+    }
+    .timer-display {
+        font-size: 6rem;
+        font-weight: bold;
+        font-variant-numeric: tabular-nums;
+        color: var(--rptu-dark);
+        margin: 20px 0;
+    }
+    .mode-btn {
+        margin: 0 5px;
+        font-weight: 600;
+    }
+    .timer-controls button {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        margin: 0 10px;
+        font-size: 1.5rem;
+    }
+    .status-text {
+        font-size: 1.2rem;
+        color: #666;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex align-items-center">
+            <h2 class="m-0"><i class="fas fa-clock me-2"></i> Pomodoro Timer</h2>
+        </div>
+        <p class="text-muted">Bleib fokussiert und mach regelmäßig Pausen.</p>
+    </div>
+</div>
+
+<div class="timer-container mt-4">
+    <div class="mb-4">
+        <button class="btn btn-outline-primary mode-btn active" id="btn-work" onclick="setMode('work')">Arbeit</button>
+        <button class="btn btn-outline-success mode-btn" id="btn-short" onclick="setMode('shortBreak')">Kurze Pause</button>
+        <button class="btn btn-outline-info mode-btn" id="btn-long" onclick="setMode('longBreak')">Lange Pause</button>
+    </div>
+    
+    <div class="status-text" id="status-text">Zeit, fokussiert zu arbeiten!</div>
+    
+    <div class="timer-display" id="timer-display">25:00</div>
+    
+    <div class="timer-controls mt-4">
+        <button class="btn btn-primary" id="btn-play" onclick="toggleTimer()">
+            <i class="fas fa-play" id="play-icon"></i>
+        </button>
+        <button class="btn btn-secondary" id="btn-reset" onclick="resetTimer()">
+            <i class="fas fa-redo"></i>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const modes = {
+        work: { time: 25 * 60, text: 'Zeit, fokussiert zu arbeiten!', color: 'var(--rptu-blue)' },
+        shortBreak: { time: 5 * 60, text: 'Zeit für eine kurze Pause.', color: '#198754' },
+        longBreak: { time: 15 * 60, text: 'Zieh dich etwas zurück, lange Pause.', color: '#0dcaf0' }
+    };
+
+    let currentMode = 'work';
+    let timeLeft = modes[currentMode].time;
+    let timerInterval = null;
+    let isRunning = false;
+
+    const timerDisplay = document.getElementById('timer-display');
+    const statusText = document.getElementById('status-text');
+    const playIcon = document.getElementById('play-icon');
+    const btnPlay = document.getElementById('btn-play');
+
+    function updateDisplay() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        document.title = `${timerDisplay.textContent} | Pomodoro`;
+    }
+
+    function setMode(mode) {
+        if (isRunning) toggleTimer();
+        
+        currentMode = mode;
+        timeLeft = modes[mode].time;
+        
+        // Update UI
+        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+        if (mode === 'work') document.getElementById('btn-work').classList.add('active');
+        else if (mode === 'shortBreak') document.getElementById('btn-short').classList.add('active');
+        else if (mode === 'longBreak') document.getElementById('btn-long').classList.add('active');
+        
+        statusText.textContent = modes[mode].text;
+        timerDisplay.style.color = modes[mode].color;
+        
+        updateDisplay();
+    }
+
+    function toggleTimer() {
+        if (isRunning) {
+            clearInterval(timerInterval);
+            playIcon.classList.replace('fa-pause', 'fa-play');
+            btnPlay.classList.replace('btn-warning', 'btn-primary');
+        } else {
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateDisplay();
+                } else {
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                    playIcon.classList.replace('fa-pause', 'fa-play');
+                    btnPlay.classList.replace('btn-warning', 'btn-primary');
+                    // Play sound
+                    const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+                    audio.play().catch(e => console.log('Audio play failed', e));
+                    
+                    if(Notification.permission === 'granted') {
+                        new Notification('Pomodoro Timer', { body: 'Die Zeit ist abgelaufen!' });
+                    }
+                }
+            }, 1000);
+            playIcon.classList.replace('fa-play', 'fa-pause');
+            btnPlay.classList.replace('btn-primary', 'btn-warning');
+            
+            // Request notification permission
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                Notification.requestPermission();
+            }
+        }
+        isRunning = !isRunning;
+    }
+
+    function resetTimer() {
+        if (isRunning) toggleTimer();
+        timeLeft = modes[currentMode].time;
+        updateDisplay();
+    }
+
+    // Initialize
+    updateDisplay();
+</script>
+{% endblock %}

@@ -56,6 +56,10 @@ def store():
 def notenrechner():
     return render_template("notenrechner.html", default_courses=DEFAULT_COURSES)
 
+@app.route("/app/pomodoro")
+def pomodoro():
+    return render_template("pomodoro.html")
+
 @app.route("/api/calculate", methods=["POST"])
 def calculate():
     data = request.json
