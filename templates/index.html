@@ -39,6 +39,9 @@
             border-left: 5px solid var(--rptu-blue);
             overflow: hidden;
         }
+        [aria-expanded="true"] .fa-chevron-down {
+            transform: rotate(180deg);
+        }
         .section-header {
             background-color: #f8f9fa;
             padding: 15px 20px;
@@ -268,29 +271,31 @@
     <div class="row">
         <!-- Main Content (Sections) -->
         <div class="col-lg-8" id="sectionsContainer">
-            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-                <h2 class="h4 m-0 d-flex align-items-center">
-                    Modulübersicht
-                    <div class="ms-3 d-none d-md-flex gap-1" style="font-size: 0.8rem;">
-                        <button class="btn btn-sm btn-light border" onclick="toggleAll(true)"><i class="fas fa-expand-alt text-muted"></i> Alle aufklappen</button>
-                        <button class="btn btn-sm btn-light border" onclick="toggleAll(false)"><i class="fas fa-compress-alt text-muted"></i> Alle zuklappen</button>
+            <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-3">
+                <h2 class="h4 m-0">Modulübersicht</h2>
+                
+                <div class="d-flex flex-wrap flex-grow-1 flex-md-grow-0 justify-content-between align-items-center gap-3">
+                    <div class="d-flex gap-2" style="font-size: 0.8rem;">
+                        <button class="btn btn-sm btn-light border" onclick="toggleAll(true)"><i class="fas fa-expand-alt text-muted"></i> Aufklappen</button>
+                        <button class="btn btn-sm btn-light border" onclick="toggleAll(false)"><i class="fas fa-compress-alt text-muted"></i> Zuklappen</button>
                     </div>
-                </h2>
-                <div class="d-flex gap-2 mt-2 mt-md-0">
-                    <input type="file" id="importFile" class="d-none" accept=".json,.xml" onchange="importData(event)">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('importFile').click()">
-                        <i class="fas fa-file-import"></i> Importieren
-                    </button>
                     
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-file-export"></i> Exportieren
+                    <div class="d-flex gap-2">
+                        <input type="file" id="importFile" class="d-none" accept=".json,.xml" onchange="importData(event)">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('importFile').click()">
+                            <i class="fas fa-file-import"></i> Importieren
                         </button>
-                        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="exportDropdown">
-                            <li><a class="dropdown-item" href="#" onclick="exportJSON(event)"><i class="fas fa-file-code me-2 text-muted"></i> JSON</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="exportXML(event)"><i class="fas fa-file-code me-2 text-muted"></i> XML</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="exportPDF(event)"><i class="fas fa-file-pdf me-2 text-danger"></i> PDF Document</a></li>
-                        </ul>
+                        
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-file-export"></i> Exportieren
+                            </button>
+                            <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="exportDropdown">
+                                <li><a class="dropdown-item" href="#" onclick="exportJSON(event)"><i class="fas fa-file-code me-2 text-muted"></i> JSON</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportXML(event)"><i class="fas fa-file-code me-2 text-muted"></i> XML</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportPDF(event)"><i class="fas fa-file-pdf me-2 text-danger"></i> PDF Document</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -332,6 +337,10 @@
 
 <script>
     let courses = {{ default_courses | tojson }};
+    const savedCourses = localStorage.getItem("notenrechner_courses");
+    if(savedCourses) {
+        try { courses = JSON.parse(savedCourses); } catch(e) {}
+    }
     
     // Hier definieren wir die übergeordneten Blöcke (Pflicht, Wahlpflicht etc.)
     const MACRO_SECTIONS = [
@@ -372,6 +381,10 @@
 
     let isFirstRender = true;
     let collapseState = {};
+    const savedCollapse = localStorage.getItem("notenrechner_collapseState");
+    if(savedCollapse) {
+        try { collapseState = JSON.parse(savedCollapse); } catch(e) {}
+    }
 
     function toggleAll(show) {
         MACRO_SECTIONS.forEach((macro, macroIdx) => {
@@ -383,18 +396,22 @@
             });
         });
         isFirstRender = false;
-        renderSections();
+        renderSections(true); // Pass true to skip overwriting state
     }
 
-    function renderSections() {
+    function renderSections(skipDomRead = false) {
         const container = document.getElementById("courseSections");
         
         // Save current collapse state before redrawing
-        if (!isFirstRender) {
+        if (!isFirstRender && !skipDomRead) {
             container.querySelectorAll('.collapse').forEach(el => {
                 collapseState[el.id] = el.classList.contains('show') || el.classList.contains('collapsing');
             });
         }
+        
+        // Save to localStorage
+        localStorage.setItem("notenrechner_collapseState", JSON.stringify(collapseState));
+        localStorage.setItem("notenrechner_courses", JSON.stringify(courses));
         
         container.innerHTML = "";
         
@@ -447,7 +464,7 @@
             if(macro.title.includes("Wahlbereich")) macroDivPercent = Math.min(100, Math.round((macroPassedEcts / 32) * 100));
 
             macroDiv.innerHTML = `
-                <div class="p-3 bg-white rounded border shadow-sm mb-3 position-relative overflow-hidden" data-bs-toggle="collapse" data-bs-target="#${macroId}" style="cursor: pointer; border-left: 6px solid var(--rptu-blue) !important; transition: all 0.2s;">
+                <div class="p-3 bg-white rounded border shadow-sm mb-3 position-relative overflow-hidden" data-bs-toggle="collapse" data-bs-target="#${macroId}" aria-expanded="${isMacroOpen}" style="cursor: pointer; border-left: 6px solid var(--rptu-blue) !important; transition: all 0.2s;">
                     <div class="d-flex justify-content-between align-items-center w-100 flex-wrap">
                         <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
                             <h2 class="h5 m-0 text-uppercase fw-bold" style="color: var(--rptu-blue)">
@@ -497,7 +514,7 @@
                 sectionDiv.className = "section-card mb-3";
                 // Let's use a nested visual style
                 sectionDiv.innerHTML = `
-                    <div class="p-2 mb-2 bg-light rounded shadow-sm d-flex justify-content-between align-items-center flex-wrap" data-bs-toggle="collapse" data-bs-target="#${sectionId}" style="cursor: pointer; transition: background 0.2s;">
+                    <div class="p-2 mb-2 bg-light rounded shadow-sm d-flex justify-content-between align-items-center flex-wrap" data-bs-toggle="collapse" data-bs-target="#${sectionId}" aria-expanded="${isSectionOpen}" style="cursor: pointer; transition: background 0.2s;">
                         <h3 class="m-0 d-flex flex-wrap align-items-center gap-2" style="font-size: 1.1rem; color: var(--rptu-blue);">
                             ${type} 
                             <span class="badge bg-success text-white" style="font-size: 0.75rem;" title="Bestanden">${passedEcts} LP</span>
@@ -563,6 +580,18 @@
             });
         });
         
+        // Add event listeners to automatically save state when toggled manually
+        container.querySelectorAll('.collapse').forEach(el => {
+            el.addEventListener('shown.bs.collapse', () => {
+                collapseState[el.id] = true;
+                localStorage.setItem("notenrechner_collapseState", JSON.stringify(collapseState));
+            });
+            el.addEventListener('hidden.bs.collapse', () => {
+                collapseState[el.id] = false;
+                localStorage.setItem("notenrechner_collapseState", JSON.stringify(collapseState));
+            });
+        });
+        
         isFirstRender = false;
     }
 
@@ -580,6 +609,9 @@
             renderSections();
         } else if (field === 'ects') {
             renderSections(); 
+        } else {
+            // Save to localStorage even if we don't re-render
+            localStorage.setItem("notenrechner_courses", JSON.stringify(courses));
         }
     }
 
