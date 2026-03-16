@@ -48,43 +48,58 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const installedAppIds = getInstalledApps();
         
-        document.querySelectorAll('.install-btn').forEach(btn => {
-            const appId = btn.getAttribute('data-appid');
+        function updateButtons() {
+            const installedAppIds = getInstalledApps();
             
-            // Initial state based on installation
-            if (installedAppIds.includes(appId)) {
-                btn.innerHTML = '<i class="fas fa-check me-1"></i> Installiert';
-                btn.classList.replace('btn-primary', 'btn-success');
-                btn.disabled = true;
-            }
-            
-            // Handle fresh install click
-            btn.addEventListener('click', function() {
-                installApp(appId);
-                this.innerHTML = '<i class="fas fa-check me-1"></i> Installiert';
-                this.classList.replace('btn-primary', 'btn-success');
-                this.disabled = true;
+            document.querySelectorAll('.install-btn').forEach(btn => {
+                const appId = btn.getAttribute('data-appid');
                 
-                // Show floating notification
-                const toast = document.createElement('div');
-                toast.className = 'position-fixed bottom-0 end-0 p-3';
-                toast.style.zIndex = '5';
-                toast.innerHTML = `
-                    <div class="toast show align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                      <div class="d-flex">
-                        <div class="toast-body">
-                          App erfolgreich zum Dashboard hinzugefügt!
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close" onclick="this.closest('.toast').remove()"></button>
-                      </div>
-                    </div>
-                `;
-                document.body.appendChild(toast);
-                setTimeout(() => { if(toast.parentNode) toast.remove(); }, 3000);
+                // Clone the button to remove old event listeners
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                if (installedAppIds.includes(appId)) {
+                    newBtn.innerHTML = '<i class="fas fa-trash me-1"></i> Entfernen';
+                    newBtn.className = 'btn btn-outline-danger mt-3 w-100 install-btn';
+                    
+                    newBtn.addEventListener('click', function() {
+                        if(confirm('Möchtest du diese App wirklich deinstallieren?')) {
+                            uninstallApp(appId);
+                            updateButtons();
+                        }
+                    });
+                } else {
+                    newBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Installieren';
+                    newBtn.className = 'btn btn-primary mt-3 w-100 install-btn';
+                    
+                    newBtn.addEventListener('click', function() {
+                        installApp(appId);
+                        
+                        // Show floating notification
+                        const toast = document.createElement('div');
+                        toast.className = 'position-fixed bottom-0 end-0 p-3';
+                        toast.style.zIndex = '5';
+                        toast.innerHTML = `
+                            <div class="toast show align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                              <div class="d-flex">
+                                <div class="toast-body">
+                                  App erfolgreich zum Dashboard hinzugefügt!
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close" onclick="this.closest('.toast').remove()"></button>
+                              </div>
+                            </div>
+                        `;
+                        document.body.appendChild(toast);
+                        setTimeout(() => { if(toast.parentNode) toast.remove(); }, 3000);
+                        
+                        updateButtons();
+                    });
+                }
             });
-        });
+        }
+        
+        updateButtons();
     });
 </script>
 {% endblock %}
