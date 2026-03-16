@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notenrechner RPTU Informatik</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --rptu-blue: #004d9c;
+            --rptu-dark: #333333;
+            --rptu-red: #d11242;
+            --bg-light: #f4f6f9;
+        }
+        body {
+            background-color: var(--bg-light);
+            font-family: 'Open Sans', Arial, sans-serif;
+            color: var(--rptu-dark);
+        }
+        .header {
+            background-color: white;
+            border-bottom: 4px solid var(--rptu-blue);
+            padding: 20px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--rptu-blue);
+            text-decoration: none;
+        }
+        .section-card {
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            border-left: 5px solid var(--rptu-blue);
+            overflow: hidden;
+        }
+        .section-header {
+            background-color: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .section-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--rptu-dark);
+            font-weight: 600;
+        }
+        .course-row {
+            padding: 10px 20px;
+            border-bottom: 1px solid #f1f1f1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .course-row:last-child {
+            border-bottom: none;
+        }
+        .course-name { flex: 2; }
+        .course-ects { flex: 0.5; max-width: 80px; }
+        .course-status { flex: 1; }
+        .course-grade { flex: 0.7; min-width: 120px; display: flex; align-items: center; gap: 10px; }
+        .grade-input { width: 70px; flex-shrink: 0; }
+        .course-actions { flex: 0.2; text-align: right; min-width: 40px; }
+        
+        .result-box {
+            background: white;
+            border-top: 5px solid var(--rptu-red);
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+        }
+        .stat-circle {
+            background: var(--rptu-blue);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0 auto 10px;
+        }
+        .add-course-btn {
+            background: none;
+            border: 2px dashed #ddd;
+            color: #777;
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        .add-course-btn:hover {
+            border-color: var(--rptu-blue);
+            color: var(--rptu-blue);
+            background: #f8f9fa;
+        }
+        @media (max-width: 768px) {
+            .course-row { flex-wrap: wrap; }
+            .course-name { flex: 100%; margin-bottom: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="container d-flex justify-content-between align-items-center">
+        <a href="#" class="logo">
+            <i class="fas fa-graduation-cap me-2"></i> RPTU Notenrechner
+        </a>
+        <div>
+            <span class="text-muted">B.Sc. Informatik</span>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row">
+        <!-- Main Content (Sections) -->
+        <div class="col-lg-8" id="sectionsContainer">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h4">Modulübersicht</h2>
+                <div>
+                    <input type="file" id="importFile" class="d-none" accept=".json" onchange="importJSON(event)">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('importFile').click()"><i class="fas fa-file-import"></i> JSON Import</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="exportJSON()"><i class="fas fa-file-export"></i> JSON Export</button>
+                </div>
+            </div>
+            
+            <div id="courseSections"></div>
+        </div>
+
+        <!-- Sidebar (Results) -->
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="result-box">
+                <h3 class="h5 mb-4 border-bottom pb-2">Aktueller Stand</h3>
+                
+                <div class="row text-center mb-4">
+                    <div class="col-6">
+                        <div class="stat-circle" id="res_gpa">-</div>
+                        <div class="small fw-bold">Gesamtschnitt</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-circle" style="background:var(--rptu-red)" id="res_ects">0</div>
+                        <div class="small fw-bold">ECTS (von 180)</div>
+                    </div>
+                </div>
+                
+                <p class="text-muted small mb-3">Davon benotet: <strong id="res_graded">0</strong> LP</p>
+                
+                <h5 class="h6 mt-4 border-bottom pb-2">Nach Bereich</h5>
+                <ul id="res_by_type" class="list-group list-group-flush small">
+                    <li class="list-group-item text-muted text-center border-0">Noch keine Noten berechnet.</li>
+                </ul>
+
+                <button class="btn btn-primary w-100 mt-4" style="background-color: var(--rptu-blue); border: none;" onclick="calculateGPA()"><i class="fas fa-calculator me-2"></i> Jetzt berechnen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JS imports -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    let courses = {{ default_courses | tojson }};
+    
+    // Hier definieren wir die übergeordneten Blöcke (Pflicht, Wahlpflicht etc.)
+    const MACRO_SECTIONS = [
+        {
+            title: "Pflichtbereich",
+            subTypes: [
+                "Software-Entwicklung",
+                "Informatiksysteme",
+                "Theoretische Grundlagen",
+                "Überfachliche Qualifikation"
+            ]
+        },
+        {
+            title: "Wahlpflichtbereich (Informatik-Vertiefung)",
+            subTypes: [
+                "Vertiefung: Algorithmik und Deduktion",
+                "Vertiefung: Eingebettete Systeme und Robotik",
+                "Vertiefung: Informationssysteme",
+                "Vertiefung: Intelligente Systeme",
+                "Vertiefung: Verteilte und vernetzte Systeme",
+                "Vertiefung: Software-Engineering",
+                "Vertiefung: Visualisierung und Scientific Computing"
+            ]
+        },
+        {
+            title: "Wahlbereich",
+            subTypes: [
+                "Ergänzung"
+            ]
+        },
+        {
+            title: "Bachelorarbeit",
+            subTypes: [
+                "Abschlussarbeit"
+            ]
+        }
+    ];
+
+    let isFirstRender = true;
+    let collapseState = {};
+
+    function renderSections() {
+        const container = document.getElementById("courseSections");
+        
+        // Save current collapse state before redrawing
+        if (!isFirstRender) {
+            container.querySelectorAll('.collapse').forEach(el => {
+                collapseState[el.id] = el.classList.contains('show') || el.classList.contains('collapsing');
+            });
+        }
+        
+        container.innerHTML = "";
+        
+        // Group courses by type
+        const grouped = {};
+        MACRO_SECTIONS.forEach(m => m.subTypes.forEach(t => grouped[t] = []));
+        
+        courses.forEach((c, idx) => {
+            if(!grouped[c.type]) grouped[c.type] = [];
+            grouped[c.type].push({...c, originalIndex: idx});
+        });
+        
+        MACRO_SECTIONS.forEach((macro, macroIdx) => {
+            
+            // Calculate total ECTS for the whole macro section
+            let macroEcts = 0;
+            let macroPassedEcts = 0;
+            let hasAnyCourses = false;
+            
+            macro.subTypes.forEach(type => {
+                macroEcts += grouped[type].reduce((sum, c) => sum + (parseFloat(c.ects) || 0), 0);
+                macroPassedEcts += grouped[type].filter(c => c.status === 'bestanden').reduce((sum, c) => sum + (parseFloat(c.ects) || 0), 0);
+                if(grouped[type].length > 0) hasAnyCourses = true;
+            });
+            
+            // Render the Macro Section Card
+            const macroDiv = document.createElement("div");
+            macroDiv.className = "section-card border-0 mb-4";
+            macroDiv.style.boxShadow = "none";
+            
+            // Determine previous state to avoid annoying re-opening
+            let macroId = `macroCollapse${macroIdx}`;
+            let isMacroOpen = isFirstRender ? true : (collapseState[macroId] !== false);
+            
+            let editBtnHtml = '';
+            let macroBadgeText = `${macroPassedEcts} / ${macroEcts} LP`;
+            if (macro.title.includes("Wahlpflichtbereich")) {
+                editBtnHtml = `<button class="btn btn-sm btn-outline-secondary ms-3" onclick="openVertiefungModal(event)" style="padding: 0.1rem 0.5rem; font-size: 0.75rem;"><i class="fas fa-edit"></i> Ändern</button>`;
+                macroBadgeText = `${macroPassedEcts} LP (Min. 16 LP)`;
+            } else if (macro.title.includes("Wahlbereich")) {
+                macroBadgeText = `${macroPassedEcts} LP (Max. 32 LP)`;
+            } else if (macro.title.includes("Pflichtbereich")) {
+                macroBadgeText = `${macroPassedEcts} / 120 LP`;
+            } else if (macro.title.includes("Abschlussarbeit")) {
+                macroBadgeText = `${macroPassedEcts} / 12 LP`;
+            }
+
+            macroDiv.innerHTML = `
+                <div class="p-3 bg-light rounded border border-secondary shadow-sm mb-3 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#${macroId}" style="cursor: pointer; border-left: 6px solid var(--rptu-blue) !important;">
+                    <h2 class="h5 m-0 d-flex align-items-center text-uppercase fw-bold" style="color: var(--rptu-blue)">
+                        ${macro.title} 
+                        <span class="badge ms-2" style="background-color: var(--rptu-red); font-size: 0.85rem;">${macroBadgeText}</span>
+                        ${editBtnHtml}
+                    </h2>
+                    <i class="fas fa-chevron-down text-muted"></i>
+                </div>
+                <div id="${macroId}" class="collapse ${isMacroOpen ? 'show' : ''} px-2">
+                    <div id="macro-body-${macroIdx}"></div>
+                </div>
+            `;
+            container.appendChild(macroDiv);
+            
+            const macroBody = document.getElementById(`macro-body-${macroIdx}`);
+            
+            // Render the Sub-Sections inside the Macro Section
+            macro.subTypes.forEach((type, sectionIdx) => {
+                const sectionCourses = grouped[type];
+                
+                // Hide empty Vertiefungen to keep it clean (unless it's the only one or something like Algorithmik is given default)
+                if(sectionCourses.length === 0 && type.startsWith("Vertiefung")) return;
+                
+                let totalEcts = sectionCourses.reduce((sum, c) => sum + (parseFloat(c.ects) || 0), 0);
+                let passedEcts = sectionCourses.filter(c => c.status === 'bestanden').reduce((sum, c) => sum + (parseFloat(c.ects) || 0), 0);
+                
+                let limitBadge = `<span class="badge bg-secondary ms-1 text-white" style="font-size: 0.75rem;" title="Gesamt">von ${totalEcts} LP</span>`;
+                if(type.startsWith("Vertiefung")) {
+                    limitBadge = `<span class="badge bg-secondary ms-1 text-white" style="font-size: 0.75rem;" title="Mindestanforderung">min. 16 LP</span>`;
+                } else if(type === "Ergänzung") {
+                    limitBadge = `<span class="badge bg-secondary ms-1 text-white" style="font-size: 0.75rem;" title="Maximal anrechenbar">max. 32 LP</span>`;
+                }
+
+                let sectionId = `collapse${macroIdx}-${sectionIdx}`;
+                let isSectionOpen = isFirstRender ? true : (collapseState[sectionId] !== false);
+                
+                const sectionDiv = document.createElement("div");
+                sectionDiv.className = "section-card mb-3";
+                // Let's use a nested visual style
+                sectionDiv.innerHTML = `
+                    <div class="section-header" data-bs-toggle="collapse" data-bs-target="#${sectionId}">
+                        <h3 style="font-size: 1.1rem;">${type} 
+                            <span class="badge bg-success ms-2 text-white" style="font-size: 0.75rem;" title="Bestanden">${passedEcts} LP</span>
+                            ${limitBadge}
+                        </h3>
+                        <i class="fas fa-chevron-down text-muted"></i>
+                    </div>
+                    <div id="${sectionId}" class="collapse ${isSectionOpen ? 'show' : ''}">
+                        <div class="section-body p-3" id="sec-body-${macroIdx}-${sectionIdx}">
+                            <div class="d-none d-md-flex fw-bold text-muted small pb-2 mb-2" style="padding: 0 20px; gap: 15px;">
+                                <div class="course-name">Modul</div>
+                                <div class="course-ects">LP</div>
+                                <div class="course-status">Status</div>
+                                <div class="course-grade">
+                                    <div class="grade-input">Note</div>
+                                    <div class="text-center" style="width:24px; flex-shrink: 0;" title="Benotet"><i class="fas fa-check-square"></i></div>
+                                </div>
+                                <div class="course-actions">Aktion</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                macroBody.appendChild(sectionDiv);
+                
+                const body = document.getElementById(`sec-body-${macroIdx}-${sectionIdx}`);
+                
+                sectionCourses.forEach(c => {
+                    const row = document.createElement("div");
+                    row.className = "course-row bg-white rounded";
+                    row.innerHTML = `
+                        <div class="course-name">
+                            <input type="text" class="form-control form-control-sm" value="${c.name}" onchange="updateCourse(${c.originalIndex}, 'name', this.value)" placeholder="Modulname">
+                        </div>
+                        <div class="course-ects">
+                            <input type="number" step="1" class="form-control form-control-sm" value="${c.ects}" onchange="updateCourse(${c.originalIndex}, 'ects', this.value)">
+                        </div>
+                        <div class="course-status">
+                            <select class="form-select form-select-sm" onchange="updateCourse(${c.originalIndex}, 'status', this.value)">
+                                <option value="ausstehend" ${c.status === 'ausstehend' ? 'selected' : ''}>Ausstehend</option>
+                                <option value="belegt" ${c.status === 'belegt' ? 'selected' : ''}>Gehört / Belegt</option>
+                                <option value="bestanden" ${c.status === 'bestanden' ? 'selected' : ''}>Bestanden</option>
+                                <option value="nicht bestanden" ${c.status === 'nicht bestanden' ? 'selected' : ''}>Nicht Bestanden</option>
+                            </select>
+                        </div>
+                        <div class="course-grade">
+                            <input type="number" step="0.1" min="1.0" max="5.0" class="form-control form-control-sm grade-input" value="${c.grade || ''}" placeholder="${c.graded === false ? 'Schein' : '1.0'}" onchange="updateCourse(${c.originalIndex}, 'grade', this.value)" ${c.status !== 'bestanden' || c.graded === false ? 'disabled' : ''}>
+                            <div class="d-flex justify-content-center align-items-center" style="width: 24px; flex-shrink: 0;" title="Benotet">
+                                <input class="form-check-input m-0" style="cursor: pointer; position: static; width: 1.25em; height: 1.25em;" type="checkbox" id="graded-${c.originalIndex}" ${c.graded !== false ? 'checked' : ''} onchange="updateCourse(${c.originalIndex}, 'graded', this.checked)">
+                            </div>
+                        </div>
+                        <div class="course-actions">
+                            <button class="btn btn-outline-danger btn-sm border-0" onclick="removeCourse(${c.originalIndex})" title="Löschen"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    `;
+                    body.appendChild(row);
+                });
+                
+                const addBtn = document.createElement("button");
+                addBtn.className = "add-course-btn mt-3";
+                addBtn.innerHTML = `<i class="fas fa-plus"></i> Neues Modul in '${type.replace('Vertiefung: ','')}' hinzufügen`;
+                addBtn.onclick = () => addCourse(type);
+                body.appendChild(addBtn);
+            });
+        });
+        
+        isFirstRender = false;
+    }
+
+    function updateCourse(index, field, value) {
+        courses[index][field] = value;
+        if(field === 'status') {
+            if(value !== 'bestanden') {
+                courses[index].grade = "";
+            }
+            renderSections();
+        } else if (field === 'graded') {
+            if (value === false) {
+                courses[index].grade = "";
+            }
+            renderSections();
+        } else if (field === 'ects') {
+            renderSections(); 
+        }
+    }
+
+    function addCourse(type) {
+        courses.push({ name: "", ects: 6, type: type, status: "ausstehend", grade: "", graded: true });
+        renderSections();
+    }
+
+    function removeCourse(index) {
+        courses.splice(index, 1);
+        renderSections();
+    }
+
+    async function calculateGPA() {
+        const response = await fetch("/api/calculate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ courses })
+        });
+        const result = await response.json();
+        
+        document.getElementById("res_gpa").innerText = result.overall_gpa !== 0 ? result.overall_gpa.toFixed(2) : "-";
+        document.getElementById("res_ects").innerText = result.total_ects_passed;
+        document.getElementById("res_graded").innerText = result.total_ects_graded;
+        
+        const typeList = document.getElementById("res_by_type");
+        typeList.innerHTML = "";
+        
+        if (Object.keys(result.gpas_by_type).length === 0) {
+            typeList.innerHTML = `<li class="list-group-item text-muted text-center border-0">Noch keine Noten berechnet.</li>`;
+            return;
+        }
+        
+        for (const [ctype, gpa] of Object.entries(result.gpas_by_type)) {
+            // Only show sections where the student passed something
+            if (result.details[ctype].ects_passed > 0) {
+                const li = document.createElement("li");
+                li.className = "list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent";
+                
+                const badgeClass = gpa > 0 ? "bg-primary" : "bg-secondary";
+                const displayGpa = gpa > 0 ? gpa.toFixed(2) : "-";
+                
+                li.innerHTML = `
+                    <span class="text-truncate" style="max-width:200px;" title="${ctype}">${ctype.replace('Vertiefung: ', '')}</span> 
+                    <span class="badge ${badgeClass} rounded-pill">${displayGpa}</span>
+                `;
+                typeList.appendChild(li);
+            }
+        }
+    }
+
+    function exportJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(courses, null, 2));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href",     dataStr     );
+        dlAnchorElem.setAttribute("download", "notenschnitt_rptu.json");
+        dlAnchorElem.click();
+    }
+
+    function importJSON(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                courses = JSON.parse(e.target.result);
+                renderSections();
+            } catch (err) {
+                alert("Fehler beim Importieren der Datei.");
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = null;
+    }
+
+    renderSections();
+
+    // Modal logic for Vertiefung
+    function openVertiefungModal(e) {
+        e.stopPropagation(); // Prevent accordion from collapsing/expanding
+        const modal = new bootstrap.Modal(document.getElementById('vertiefungModal'));
+        modal.show();
+    }
+
+    // Default vertiefung modules mapped by their name
+    const VERTIEFUNG_MAP = {
+        "Algorithmik und Deduktion": [
+            { "name": "Logik für Informatiker", "ects": 6, "grade": null, "has_grade": true, "type": "Vertiefung: Algorithmik und Deduktion", "passed": false },
+            { "name": "Algorithmen und Datenstrukturen", "ects": 8, "grade": null, "has_grade": true, "type": "Vertiefung: Algorithmik und Deduktion", "passed": false },
+            { "name": "Algorithmik und Deduktion (Schein)", "ects": 4, "grade": null, "has_grade": false, "type": "Vertiefung: Algorithmik und Deduktion", "passed": false },
+            { "name": "Weiteres Modul A&D", "ects": 0, "grade": null, "has_grade": true, "type": "Vertiefung: Algorithmik und Deduktion", "passed": false }
+        ],
+        "Eingebettete Systeme und Robotik": [
+            { "name": "Robotik I", "ects": 8, "grade": null, "has_grade": true, "type": "Vertiefung: Eingebettete Systeme und Robotik", "passed": false },
+            { "name": "Robotik Praktikum", "ects": 4, "grade": null, "has_grade": false, "type": "Vertiefung: Eingebettete Systeme und Robotik", "passed": false },
+            { "name": "Weiteres Modul ESR", "ects": 0, "grade": null, "has_grade": true, "type": "Vertiefung: Eingebettete Systeme und Robotik", "passed": false }
+        ],
+        "Informationssysteme": [
+            { "name": "Informationssysteme", "ects": 8, "grade": null, "has_grade": true, "type": "Vertiefung: Informationssysteme", "passed": false },
+            { "name": "Praktikum Informationssysteme", "ects": 4, "grade": null, "has_grade": false, "type": "Vertiefung: Informationssysteme", "passed": false },
+            { "name": "Weiteres Modul IS", "ects": 0, "grade": null, "has_grade": true, "type": "Vertiefung: Informationssysteme", "passed": false }
+        ],
+        "Intelligente Systeme": [
+            { "name": "Künstliche Intelligenz", "ects": 8, "grade": null, "has_grade": true, "type": "Vertiefung: Intelligente Systeme", "passed": false },
+            { "name": "Maschinelles Lernen", "ects": 8, "grade": null, "has_grade": true, "type": "Vertiefung: Intelligente Systeme", "passed": false },
+            { "name": "Weiteres Modul IntS", "ects": 0, "grade": null, "has_grade": true, "type": "Vertiefung: Intelligente Systeme", "passed": false }
+        ],
+        "Verteilte und vernetzte Systeme": [
+            { "name": "Verteilte Systeme", "ects": 8, "grade": null, "has_grade": true, "type": "Vertiefung: Verteilte und vernetzte Systeme", "passed": false },
+            { "name": "Nebenläufige Programmierung", "ects": 6, "grade": null, "has_grade": true, "type": "Vertiefung: Verteilte und vernetzte Systeme", "passed": false },
+            { "name": "Weiteres Modul VVS", "ects": 0, "grade": null, "has_grade": true, "type": "Vertiefung: Verteilte und vernetzte Systeme", "passed": false }
+        ],
+        "Software-Engineering": [
+            { "name": "Software Engineering II", "ects": 8, "grade": null, "has_grade": true, "type": "Vertiefung: Software-Engineering", "passed": false },
+            { "name": "Projektmanagement", "ects": 4, "grade": null, "has_grade": true, "type": "Vertiefung: Software-Engineering", "passed": false },
+            { "name": "Software Engineering Teamprojekt", "ects": 8, "grade": null, "has_grade": false, "type": "Vertiefung: Software-Engineering", "passed": false }
+        ],
+        "Visualisierung und Scientific Computing": [
+            { "name": "Computergrafik I", "ects": 8, "grade": null, "has_grade": true, "type": "Vertiefung: Visualisierung und Scientific Computing", "passed": false },
+            { "name": "Scientific Visualization", "ects": 4, "grade": null, "has_grade": true, "type": "Vertiefung: Visualisierung und Scientific Computing", "passed": false },
+            { "name": "Information Visualization", "ects": 4, "grade": null, "has_grade": true, "type": "Vertiefung: Visualisierung und Scientific Computing", "passed": false },
+            { "name": "Weiteres Modul VSC", "ects": 0, "grade": null, "has_grade": true, "type": "Vertiefung: Visualisierung und Scientific Computing", "passed": false }
+        ]
+    };
+
+    function saveVertiefung() {
+        const selected = document.getElementById("vertiefungSelect").value;
+        const newModules = VERTIEFUNG_MAP[selected];
+        
+        // Remove old Vertiefungs modules and update MACRO_SECTIONS title
+        courses = courses.filter(c => !(c.type && c.type.startsWith("Vertiefung:")));
+        
+        // Find existing Wahlpflichtbereich macro section and update title
+        let macroObj = MACRO_SECTIONS.find(m => m.title.includes("Wahlpflichtbereich"));
+        if(macroObj) {
+            macroObj.title = `Wahlpflichtbereich (Informatik-Vertiefung: ${selected})`;
+        }
+
+        // Add new courses
+        newModules.forEach(m => courses.push(Object.assign({}, m)));
+
+        // Close modal and un-collapse the Wahlpflichtbereich
+        const modalEl = document.getElementById('vertiefungModal');
+        const modalInst = bootstrap.Modal.getInstance(modalEl);
+        modalInst.hide();
+        
+        renderSections();
+        
+        // Optional: Force open the Wahlpflichtbereich after adding
+        const macroIndex = MACRO_SECTIONS.findIndex(m => m.title.includes("Wahlpflichtbereich"));
+        const macroId = `collapse-macro-${macroIndex}`;
+        if(macroId) collapseState[macroId] = true;
+        renderSections(); 
+    }
+</script>
+
+<!-- Vertiefung Modal -->
+<div class="modal fade" id="vertiefungModal" tabindex="-1" aria-labelledby="vertiefungModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header text-white" style="background-color: var(--rptu-blue);">
+        <h5 class="modal-title fw-bold" id="vertiefungModalLabel">Vertiefung ändern</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <label for="vertiefungSelect" class="form-label text-muted fw-bold">Wähle deine Informatik-Vertiefung:</label>
+        <select class="form-select form-select-lg" id="vertiefungSelect">
+            <option value="Algorithmik und Deduktion">Algorithmik und Deduktion</option>
+            <option value="Eingebettete Systeme und Robotik">Eingebettete Systeme und Robotik</option>
+            <option value="Informationssysteme">Informationssysteme</option>
+            <option value="Intelligente Systeme">Intelligente Systeme</option>
+            <option value="Verteilte und vernetzte Systeme">Verteilte und vernetzte Systeme</option>
+            <option value="Software-Engineering">Software-Engineering</option>
+            <option value="Visualisierung und Scientific Computing">Visualisierung und Scientific Computing</option>
+        </select>
+        <div class="mt-3 text-muted" style="font-size: 0.85rem;">
+            Achtung: Beim Ändern der Vertiefung werden die aktuellen Kurse im Bereich "Vertiefung" entfernt und durch die Standardkurse der neuen Vertiefung ersetzt.
+        </div>
+      </div>
+      <div class="modal-footer border-0 bg-light">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
+        <button type="button" class="btn text-white px-4" style="background-color: var(--rptu-blue);" onclick="saveVertiefung()">Speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
