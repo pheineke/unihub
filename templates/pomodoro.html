@@ -13,6 +13,20 @@
         max-width: 500px;
         margin: 0 auto;
         border-top: 5px solid var(--rptu-blue);
+        position: relative;
+    }
+    .settings-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: transparent;
+        border: none;
+        color: #999;
+        font-size: 1.2rem;
+        transition: color 0.3s;
+    }
+    .settings-btn:hover {
+        color: var(--rptu-blue);
     }
     .timer-display {
         font-size: 6rem;
@@ -50,7 +64,42 @@
     </div>
 </div>
 
+<!-- Settings Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="settingsModalLabel"><i class="fas fa-cog me-2"></i>Timer-Einstellungen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="settings-form">
+            <div class="mb-3">
+                <label for="work-time-input" class="form-label">Arbeit (Minuten)</label>
+                <input type="number" class="form-control" id="work-time-input" min="1" max="120">
+            </div>
+            <div class="mb-3">
+                <label for="short-break-input" class="form-label">Kurze Pause (Minuten)</label>
+                <input type="number" class="form-control" id="short-break-input" min="1" max="60">
+            </div>
+            <div class="mb-3">
+                <label for="long-break-input" class="form-label">Lange Pause (Minuten)</label>
+                <input type="number" class="form-control" id="long-break-input" min="1" max="60">
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+        <button type="button" class="btn btn-primary" onclick="saveSettings()">Speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="timer-container mt-4">
+    <button class="settings-btn" data-bs-toggle="modal" data-bs-target="#settingsModal" title="Einstellungen">
+        <i class="fas fa-cog"></i>
+    </button>
     <div class="mb-4">
         <button class="btn btn-outline-primary mode-btn active" id="btn-work" onclick="setMode('work')">Arbeit</button>
         <button class="btn btn-outline-success mode-btn" id="btn-short" onclick="setMode('shortBreak')">Kurze Pause</button>
@@ -74,10 +123,17 @@
 
 {% block scripts %}
 <script>
+    // Load settings from localStorage or use defaults
+    const savedSettings = JSON.parse(localStorage.getItem('pomodoroSettings')) || {
+        work: 25,
+        shortBreak: 5,
+        longBreak: 15
+    };
+
     const modes = {
-        work: { time: 25 * 60, text: 'Zeit, fokussiert zu arbeiten!', color: 'var(--rptu-blue)' },
-        shortBreak: { time: 5 * 60, text: 'Zeit für eine kurze Pause.', color: '#198754' },
-        longBreak: { time: 15 * 60, text: 'Zieh dich etwas zurück, lange Pause.', color: '#0dcaf0' }
+        work: { time: savedSettings.work * 60, text: 'Zeit, fokussiert zu arbeiten!', color: 'var(--rptu-blue)' },
+        shortBreak: { time: savedSettings.shortBreak * 60, text: 'Zeit für eine kurze Pause.', color: '#198754' },
+        longBreak: { time: savedSettings.longBreak * 60, text: 'Zieh dich etwas zurück, lange Pause.', color: '#0dcaf0' }
     };
 
     let currentMode = 'work';
@@ -157,6 +213,36 @@
     }
 
     // Initialize
-    updateDisplay();
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('work-time-input').value = savedSettings.work;
+        document.getElementById('short-break-input').value = savedSettings.shortBreak;
+        document.getElementById('long-break-input').value = savedSettings.longBreak;
+        updateDisplay();
+    });
+
+    function saveSettings() {
+        const w = parseInt(document.getElementById('work-time-input').value) || 25;
+        const s = parseInt(document.getElementById('short-break-input').value) || 5;
+        const l = parseInt(document.getElementById('long-break-input').value) || 15;
+
+        // Save to localStorage
+        const newSettings = { work: w, shortBreak: s, longBreak: l };
+        localStorage.setItem('pomodoroSettings', JSON.stringify(newSettings));
+
+        // Update modes
+        modes.work.time = w * 60;
+        modes.shortBreak.time = s * 60;
+        modes.longBreak.time = l * 60;
+
+        // Reset and apply to current mode
+        if (isRunning) toggleTimer();
+        timeLeft = modes[currentMode].time;
+        updateDisplay();
+
+        // Close modal
+        const modalEl = document.getElementById('settingsModal');
+        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.hide();
+    }
 </script>
 {% endblock %}
