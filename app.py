@@ -1,52 +1,66 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 import json
 import os
+import glob
 
 app = Flask(__name__)
 
-# Standard courses for Grundstudium as fallback based on RPTU study plan
-DEFAULT_COURSES = [
-    # ---- PFLICHTBEREICH (120 LP) ----
-    
-    # Software-Entwicklung (44 LP)
-    {"name": "Konzepte der Programmierung", "ects": 10, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Modellierung von Software-Systemen", "ects": 4, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Verteilte und nebenläufige Systeme", "ects": 4, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Algorithmen und Datenstrukturen", "ects": 8, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Projektmanagement", "ects": 6, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": False},
-    {"name": "Software-Entwicklungsprojekt", "ects": 8, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Programmierpraktikum", "ects": 4, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": False},
-    
-    # Informatiksysteme (36 LP)
-    {"name": "Digitaltechnik und Rechnerarchitektur", "ects": 8, "type": "Informatiksysteme", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Rechnerorganisation und Systemsoftware", "ects": 8, "type": "Informatiksysteme", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Informationssysteme", "ects": 8, "type": "Informatiksysteme", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Kommunikationssysteme", "ects": 4, "type": "Informatiksysteme", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Scientific Computing", "ects": 4, "type": "Informatiksysteme", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Künstliche Intelligenz", "ects": 4, "type": "Informatiksysteme", "grade": "", "status": "ausstehend", "graded": True},
+DEGREES_DIR = os.path.join(os.path.dirname(__file__), 'data', 'degrees')
 
-    # Theoretische Grundlagen (33 LP)
-    {"name": "Mathematik für Informatiker: Algebraische Strukturen", "ects": 8, "type": "Theoretische Grundlagen", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Mathematik für Informatiker: Kombinatorik, Stochastik und Statistik", "ects": 8, "type": "Theoretische Grundlagen", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Mathematik für Informatiker: Analysis", "ects": 5, "type": "Theoretische Grundlagen", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Formale Sprachen und Berechenbarkeit", "ects": 6, "type": "Theoretische Grundlagen", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Logik und Semantik von Programmiersprachen", "ects": 6, "type": "Theoretische Grundlagen", "grade": "", "status": "ausstehend", "graded": True},
+def get_available_degrees():
+    degrees = []
+    if os.path.exists(DEGREES_DIR):
+        for filepath in glob.glob(os.path.join(DEGREES_DIR, "*.json")):
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    degrees.append({
+                        "id": data.get("id", os.path.basename(filepath).replace(".json", "")),
+                        "name": data.get("name", "Unbenannter Studiengang")
+                    })
+            except:
+                pass
+    return sorted(degrees, key=lambda x: x["name"])
 
-    # Überfachliche Qualifikation (7 LP)
-    {"name": "Informatik und Gesellschaft", "ects": 3, "type": "Überfachliche Qualifikation", "grade": "", "status": "ausstehend", "graded": False},
-    {"name": "Bachelor-Seminar", "ects": 4, "type": "Überfachliche Qualifikation", "grade": "", "status": "ausstehend", "graded": True},
-    
-    # ---- WAHBEREICH / REST ----
-    {"name": "Vertiefungsvorlesung", "ects": 8, "type": "Vertiefung: Algorithmik und Deduktion", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Vertiefungsprojekt", "ects": 8, "type": "Vertiefung: Algorithmik und Deduktion", "grade": "", "status": "ausstehend", "graded": False},
-    
-    {"name": "Wahlbereich (Ergänzung)", "ects": 10, "type": "Ergänzung", "grade": "", "status": "ausstehend", "graded": True},
-    {"name": "Bachelorarbeit", "ects": 12, "type": "Abschlussarbeit", "grade": "", "status": "ausstehend", "graded": True}
-]
+def load_degree_data(degree_id):
+    filepath = os.path.join(DEGREES_DIR, f"{degree_id}.json")
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return None
+    return None
 
 @app.route("/")
 def index():
-    return render_template("index.html", default_courses=DEFAULT_COURSES)
+    degrees = get_available_degrees()
+    # Default to Informatik if available, else first one
+    default_id = "informatik_bsc"
+    if any(d['id'] == default_id for d in degrees):
+        return redirect(url_for('degree_view', degree_id=default_id))
+    elif degrees:
+        return redirect(url_for('degree_view', degree_id=degrees[0]['id']))
+    else:
+        return "Keine Studiengänge gefunden."
+
+@app.route("/<degree_id>")
+def degree_view(degree_id):
+    degree_data = load_degree_data(degree_id)
+    if not degree_data:
+        # Fallback or error
+        degrees = get_available_degrees()
+        if degrees:
+            return redirect(url_for('degree_view', degree_id=degrees[0]['id']))
+        return "Studiengang nicht gefunden.", 404
+        
+    available_degrees = get_available_degrees()
+    
+    return render_template("index.html", 
+                         default_courses=degree_data.get("default_courses", []),
+                         macro_sections=degree_data.get("macro_sections", []),
+                         current_degree=degree_data,
+                         available_degrees=available_degrees)
 
 @app.route("/api/calculate", methods=["POST"])
 def calculate():

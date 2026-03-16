@@ -1,0 +1,53 @@
+{
+    "id": "physics_bsc",
+    "name": "B.Sc. Physik",
+    "ects_target": 180,
+    "macro_sections": [
+        {
+            "title": "Pflichtbereich",
+            "target_ects": 100,
+            "subTypes": [
+                "Experimentalphysik",
+                "Theoretische Physik",
+                "Mathematik",
+                "Praktika"
+            ]
+        },
+        {
+            "title": "Wahlpflichtbereich",
+            "min_ects": 20,
+            "subTypes": [
+                "Physikalisches Wahlpflichtfach",
+                "Nichtphysikalisches Wahlpflichtfach"
+            ]
+        },
+        {
+            "title": "Bachelorarbeit",
+            "target_ects": 12,
+            "subTypes": [
+                "Bachelorarbeit"
+            ]
+        }
+    ],
+    "default_courses": [
+        {"name": "Experimentalphysik I (Mechanik/Wärmelehre)", "ects": 9, "type": "Experimentalphysik", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Experimentalphysik II (Elektrodynamik/Optik)", "ects": 9, "type": "Experimentalphysik", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Experimentalphysik III (Atom- und Quantenphysik)", "ects": 9, "type": "Experimentalphysik", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Experimentalphysik IV (Festkörperphysik)", "ects": 9, "type": "Experimentalphysik", "grade": "", "status": "ausstehend", "graded": true},
+        
+        {"name": "Theoretische Physik I (Mechanik)", "ects": 8, "type": "Theoretische Physik", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Theoretische Physik II (Quantenmechanik)", "ects": 8, "type": "Theoretische Physik", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Theoretische Physik III (Elektrodynamik)", "ects": 8, "type": "Theoretische Physik", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Theoretische Physik IV (Thermodynamik/Statistik)", "ects": 8, "type": "Theoretische Physik", "grade": "", "status": "ausstehend", "graded": true},
+
+        {"name": "Mathematik für Physiker I", "ects": 9, "type": "Mathematik", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Mathematik für Physiker II", "ects": 9, "type": "Mathematik", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Mathematik für Physiker III", "ects": 9, "type": "Mathematik", "grade": "", "status": "ausstehend", "graded": true},
+
+        {"name": "Anfängerpraktikum I", "ects": 6, "type": "Praktika", "grade": "", "status": "ausstehend", "graded": false},
+        {"name": "Anfängerpraktikum II", "ects": 6, "type": "Praktika", "grade": "", "status": "ausstehend", "graded": false},
+        {"name": "Fortgeschrittenenpraktikum", "ects": 8, "type": "Praktika", "grade": "", "status": "ausstehend", "graded": true},
+
+        {"name": "Bachelorarbeit", "ects": 12, "type": "Bachelorarbeit", "grade": "", "status": "ausstehend", "graded": true}
+    ]
+}

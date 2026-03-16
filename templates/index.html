@@ -261,11 +261,22 @@
 
 <div class="header">
     <div class="container d-flex justify-content-between align-items-center">
-        <a href="#" class="logo">
+        <a href="{{ url_for('index') }}" class="logo">
             <i class="fas fa-graduation-cap me-2"></i> RPTU Notenrechner
         </a>
-        <div>
-            <span class="text-muted">B.Sc. Informatik</span>
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle border-0 fw-bold text-dark bg-transparent" type="button" id="degreeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                {{ current_degree.name if current_degree else 'B.Sc. Informatik' }}
+            </button>
+            <ul class="dropdown-menu shadow-sm border-0 dropdown-menu-end" aria-labelledby="degreeDropdown">
+                {% if available_degrees %}
+                    {% for degree in available_degrees %}
+                        <li><a class="dropdown-item {{ 'active' if current_degree and current_degree.id == degree.id else '' }}" href="{{ url_for('degree_view', degree_id=degree.id) }}">{{ degree.name }}</a></li>
+                    {% endfor %}
+                {% else %}
+                    <li><span class="dropdown-item text-muted">Keine weiteren Studiengänge</span></li>
+                {% endif %}
+            </ul>
         </div>
     </div>
 </div>
@@ -320,7 +331,7 @@
                         <div class="d-flex justify-content-center align-items-center mb-1" id="ects_progress_circle" style="width: 70px; height: 70px; border-radius: 50%; background: conic-gradient(var(--rptu-blue) 0%, #eee 0); transition: background 0.3s;">
                             <div class="stat-circle" id="res_ects" style="margin: 0; width: 58px; height: 58px; background: white; color: var(--rptu-dark); z-index: 1;">0</div>
                         </div>
-                        <div class="small fw-bold">ECTS (von 180)</div>
+                        <div class="small fw-bold">ECTS (von {{ current_degree.ects_target }})</div>
                     </div>
                 </div>
                 
@@ -341,53 +352,31 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+    const degreeId = "{{ current_degree.id }}";
+    const ECTS_TARGET = {{ current_degree.ects_target if current_degree else 180 }};
+    const ENABLE_SPECIALIZATION = {{ 'true' if current_degree.get('enable_specialization_modal') else 'false' }};
+    const storageKeyCourses = "notenrechner_courses_" + degreeId;
+    const storageKeyCollapse = "notenrechner_collapseState_" + degreeId;
+    
     let courses = {{ default_courses | tojson }};
-    const savedCourses = localStorage.getItem("notenrechner_courses");
+    const savedCourses = localStorage.getItem(storageKeyCourses);
     if(savedCourses) {
         try { courses = JSON.parse(savedCourses); } catch(e) {}
+    } else if (degreeId === "informatik_bsc" && localStorage.getItem("notenrechner_courses")) {
+        // Migration of legacy data
+        try { 
+            courses = JSON.parse(localStorage.getItem("notenrechner_courses")); 
+            localStorage.setItem(storageKeyCourses, JSON.stringify(courses));
+        } catch(e) {}
     }
     
-    // Hier definieren wir die übergeordneten Blöcke (Pflicht, Wahlpflicht etc.)
-    const MACRO_SECTIONS = [
-        {
-            title: "Pflichtbereich",
-            subTypes: [
-                "Software-Entwicklung",
-                "Informatiksysteme",
-                "Theoretische Grundlagen",
-                "Überfachliche Qualifikation"
-            ]
-        },
-        {
-            title: "Wahlpflichtbereich (Informatik-Vertiefung)",
-            subTypes: [
-                "Vertiefung: Algorithmik und Deduktion",
-                "Vertiefung: Eingebettete Systeme und Robotik",
-                "Vertiefung: Informationssysteme",
-                "Vertiefung: Intelligente Systeme",
-                "Vertiefung: Verteilte und vernetzte Systeme",
-                "Vertiefung: Software-Engineering",
-                "Vertiefung: Visualisierung und Scientific Computing"
-            ]
-        },
-        {
-            title: "Wahlbereich",
-            subTypes: [
-                "Ergänzung"
-            ]
-        },
-        {
-            title: "Bachelorarbeit",
-            subTypes: [
-                "Abschlussarbeit"
-            ]
-        }
-    ];
+    // Config injected from server
+    const MACRO_SECTIONS = {{ macro_sections | tojson }};
 
     let isFirstRender = true;
     let collapseState = {};
     let sectionEditState = {};
-    const savedCollapse = localStorage.getItem("notenrechner_collapseState");
+    const savedCollapse = localStorage.getItem(storageKeyCollapse);
     if(savedCollapse) {
         try { collapseState = JSON.parse(savedCollapse); } catch(e) {}
     }
@@ -430,8 +419,8 @@
         }
         
         // Save to localStorage
-        localStorage.setItem("notenrechner_collapseState", JSON.stringify(collapseState));
-        localStorage.setItem("notenrechner_courses", JSON.stringify(courses));
+        localStorage.setItem(storageKeyCollapse, JSON.stringify(collapseState));
+        localStorage.setItem(storageKeyCourses, JSON.stringify(courses));
         
         container.innerHTML = "";
         
@@ -468,20 +457,24 @@
             
             let editBtnHtml = '';
             let macroBadgeText = `${macroPassedEcts} / ${macroEcts} LP`;
-            if (macro.title.includes("Wahlpflichtbereich")) {
-                editBtnHtml = `<button class="btn btn-sm btn-outline-secondary ms-3" onclick="if(event) { event.preventDefault(); event.stopPropagation(); } openVertiefungModal(event)" style="padding: 0.1rem 0.5rem; font-size: 0.75rem;"><i class="fas fa-edit"></i> Ändern</button>`;
-                macroBadgeText = `${macroPassedEcts} LP (Min. 16 LP)`;
-            } else if (macro.title.includes("Wahlbereich")) {
-                macroBadgeText = `${macroPassedEcts} LP (Max. 32 LP)`;
-            } else if (macro.title.includes("Pflichtbereich")) {
-                macroBadgeText = `${macroPassedEcts} / 120 LP`;
-            } else if (macro.title.includes("Abschlussarbeit")) {
-                macroBadgeText = `${macroPassedEcts} / 12 LP`;
+            let macroDenominator = macroEcts;
+
+            if (macro.min_ects) {
+                macroBadgeText = `${macroPassedEcts} LP (Min. ${macro.min_ects} LP)`;
+                macroDenominator = macro.min_ects;
+            } else if (macro.max_ects) {
+                macroBadgeText = `${macroPassedEcts} LP (Max. ${macro.max_ects} LP)`;
+                macroDenominator = macro.max_ects;
+            } else if (macro.target_ects) {
+                macroBadgeText = `${macroPassedEcts} / ${macro.target_ects} LP`;
+                macroDenominator = macro.target_ects;
             }
 
-            let macroDivPercent = macroEcts > 0 ? Math.min(100, Math.round((macroPassedEcts / macroEcts) * 100)) : 0;
-            if(macro.title.includes("Wahlpflichtbereich")) macroDivPercent = Math.min(100, Math.round((macroPassedEcts / 16) * 100));
-            if(macro.title.includes("Wahlbereich")) macroDivPercent = Math.min(100, Math.round((macroPassedEcts / 32) * 100));
+            if (ENABLE_SPECIALIZATION && macro.title.includes("Wahlpflichtbereich")) {
+                 editBtnHtml = `<button class="btn btn-sm btn-outline-secondary ms-3" onclick="if(event) { event.preventDefault(); event.stopPropagation(); } openVertiefungModal(event)" style="padding: 0.1rem 0.5rem; font-size: 0.75rem;"><i class="fas fa-edit"></i> Ändern</button>`;
+            }
+
+            let macroDivPercent = macroDenominator > 0 ? Math.min(100, Math.round((macroPassedEcts / macroDenominator) * 100)) : 0;
 
             let macroBorderColor = "var(--bs-danger)"; // red
             if (macroDivPercent >= 100) {
@@ -532,7 +525,7 @@
                 if(type.startsWith("Vertiefung")) {
                     limitBadge = `<span class="badge bg-secondary ms-1 text-white" style="font-size: 0.75rem;" title="Mindestanforderung">min. 16 LP</span>`;
                     sectionMaxEcts = 16;
-                } else if(type === "Ergänzung") {
+                } else if(type.includes("Ergänzung") || type.includes("Wahlbereich")) {
                     limitBadge = `<span class="badge bg-secondary ms-1 text-white" style="font-size: 0.75rem;" title="Maximal anrechenbar">max. 32 LP</span>`;
                     sectionMaxEcts = 32;
                 }
@@ -654,7 +647,7 @@
             el.addEventListener('shown.bs.collapse', (e) => {
                 if (e.target !== el) return;
                 collapseState[el.id] = true;
-                localStorage.setItem("notenrechner_collapseState", JSON.stringify(collapseState));
+                localStorage.setItem(storageKeyCollapse, JSON.stringify(collapseState));
                 // Update chevron rotation if possible by finding previous sibling
                 let header = el.previousElementSibling;
                 if(header && header.hasAttribute('aria-expanded')) {
@@ -665,7 +658,7 @@
                 if (e.target !== el) return;
                 collapseState[el.id] = false;
                 sectionEditState[el.id] = false; // Reset view mode when section closes
-                localStorage.setItem("notenrechner_collapseState", JSON.stringify(collapseState));
+                localStorage.setItem(storageKeyCollapse, JSON.stringify(collapseState));
                 let header = el.previousElementSibling;
                 if(header && header.hasAttribute('aria-expanded')) {
                     header.setAttribute('aria-expanded', 'false');
@@ -690,7 +683,7 @@
             renderSections();
         } else {
             // Save to localStorage even if we don't re-render
-            localStorage.setItem("notenrechner_courses", JSON.stringify(courses));
+            localStorage.setItem(storageKeyCourses, JSON.stringify(courses));
         }
     }
 
@@ -758,7 +751,7 @@
         document.getElementById("res_ects").innerText = totalEcts;
         
         // Update ECTS Progress Circle
-        let ectsPercent = Math.min(100, (totalEcts / 180) * 100);
+        let ectsPercent = Math.min(100, (totalEcts / ECTS_TARGET) * 100);
         let circleColor = "var(--bs-danger)";
         if(ectsPercent >= 100) circleColor = "var(--bs-success)";
         else if(ectsPercent > 0) circleColor = "var(--bs-warning)";

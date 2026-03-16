@@ -1,0 +1,76 @@
+{
+    "id": "informatik_bsc",
+    "name": "B.Sc. Informatik",
+    "ects_target": 180,
+    "enable_specialization_modal": true,
+    "macro_sections": [
+        {
+            "title": "Pflichtbereich",
+            "target_ects": 120,
+            "subTypes": [
+                "Software-Entwicklung",
+                "Informatiksysteme",
+                "Theoretische Grundlagen",
+                "Überfachliche Qualifikation"
+            ]
+        },
+        {
+            "title": "Wahlpflichtbereich (Informatik-Vertiefung)",
+            "min_ects": 16,
+            "subTypes": [
+                "Vertiefung: Algorithmik und Deduktion",
+                "Vertiefung: Eingebettete Systeme und Robotik",
+                "Vertiefung: Informationssysteme",
+                "Vertiefung: Intelligente Systeme",
+                "Vertiefung: Verteilte und vernetzte Systeme",
+                "Vertiefung: Software-Engineering",
+                "Vertiefung: Visualisierung und Scientific Computing"
+            ]
+        },
+        {
+            "title": "Wahlbereich",
+            "max_ects": 32,
+            "subTypes": [
+                "Ergänzung"
+            ]
+        },
+        {
+            "title": "Bachelorarbeit",
+            "target_ects": 12,
+            "subTypes": [
+                "Abschlussarbeit"
+            ]
+        }
+    ],
+    "default_courses": [
+        {"name": "Konzepte der Programmierung", "ects": 10, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Modellierung von Software-Systemen", "ects": 4, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Verteilte und nebenläufige Systeme", "ects": 4, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Algorithmen und Datenstrukturen", "ects": 8, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Projektmanagement", "ects": 6, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": false},
+        {"name": "Software-Entwicklungsprojekt", "ects": 8, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Programmierpraktikum", "ects": 4, "type": "Software-Entwicklung", "grade": "", "status": "ausstehend", "graded": false},
+        
+        {"name": "Digitaltechnik und Rechnerarchitektur", "ects": 8, "type": "Informatiksysteme", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Rechnerorganisation und Systemsoftware", "ects": 8, "type": "Informatiksysteme", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Informationssysteme", "ects": 8, "type": "Informatiksysteme", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Kommunikationssysteme", "ects": 4, "type": "Informatiksysteme", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Scientific Computing", "ects": 4, "type": "Informatiksysteme", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Künstliche Intelligenz", "ects": 4, "type": "Informatiksysteme", "grade": "", "status": "ausstehend", "graded": true},
+
+        {"name": "Mathematik für Informatiker: Algebraische Strukturen", "ects": 8, "type": "Theoretische Grundlagen", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Mathematik für Informatiker: Kombinatorik, Stochastik und Statistik", "ects": 8, "type": "Theoretische Grundlagen", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Mathematik für Informatiker: Analysis", "ects": 5, "type": "Theoretische Grundlagen", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Formale Sprachen und Berechenbarkeit", "ects": 6, "type": "Theoretische Grundlagen", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Logik und Semantik von Programmiersprachen", "ects": 6, "type": "Theoretische Grundlagen", "grade": "", "status": "ausstehend", "graded": true},
+
+        {"name": "Informatik und Gesellschaft", "ects": 3, "type": "Überfachliche Qualifikation", "grade": "", "status": "ausstehend", "graded": false},
+        {"name": "Bachelor-Seminar", "ects": 4, "type": "Überfachliche Qualifikation", "grade": "", "status": "ausstehend", "graded": true},
+        
+        {"name": "Vertiefungsvorlesung", "ects": 8, "type": "Vertiefung: Algorithmik und Deduktion", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Vertiefungsprojekt", "ects": 8, "type": "Vertiefung: Algorithmik und Deduktion", "grade": "", "status": "ausstehend", "graded": false},
+        
+        {"name": "Wahlbereich (Ergänzung)", "ects": 10, "type": "Ergänzung", "grade": "", "status": "ausstehend", "graded": true},
+        {"name": "Bachelorarbeit", "ects": 12, "type": "Abschlussarbeit", "grade": "", "status": "ausstehend", "graded": true}
+    ]
+}
