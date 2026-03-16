@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: rptu_hub
+    restart: unless-stopped
+    ports:
+      - "80:5000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+    # Optional: If you want to keep data persistently, uncomment below if you generate local files
+    # volumes:
+    #   - .:/app
