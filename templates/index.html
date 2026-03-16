@@ -60,13 +60,15 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            transition: background 0.2s;
         }
+        .course-row:hover { background: #f8f9fa; }
         .course-row:last-child {
             border-bottom: none;
         }
-        .course-name { flex: 2; }
+        .course-name { flex: 2; min-width: 150px; }
         .course-ects { flex: 0.5; max-width: 80px; }
-        .course-status { flex: 1; }
+        .course-status { flex: 1; min-width: 120px; }
         .course-grade { flex: 0.7; min-width: 120px; display: flex; align-items: center; gap: 10px; }
         .grade-input { width: 70px; flex-shrink: 0; }
         .course-actions { flex: 0.2; text-align: right; min-width: 40px; }
@@ -109,8 +111,33 @@
             background: #f8f9fa;
         }
         @media (max-width: 768px) {
-            .course-row { flex-wrap: wrap; }
-            .course-name { flex: 100%; margin-bottom: 10px; }
+            .course-row { 
+                flex-wrap: wrap; 
+                padding: 12px;
+                gap: 12px;
+                background: #fff;
+                border: 1px solid #e0e0e0 !important;
+                border-radius: 6px;
+                margin-bottom: 10px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }
+            .course-row > div { flex: 1 1 auto; }
+            .course-row:last-child {
+                border-bottom: 1px solid #e0e0e0 !important;
+            }
+            .course-name { flex: 1 1 100%; margin-bottom: 4px; font-weight: bold; }
+            .course-ects { flex: 1 1 20%; min-width: 70px; }
+            .course-status { flex: 1 1 40%; }
+            .course-grade { flex: 1 1 30%; justify-content: flex-start; }
+            .grade-input { width: 100%; max-width: 80px; }
+            .course-actions { flex: 1 1 10%; text-align: center; }
+            
+            .header { padding: 15px 0; }
+            .logo { font-size: 1.25rem; }
+            
+            .macro-header-content { flex-direction: column; align-items: flex-start !important; gap: 8px; }
+            .macro-header-badges { margin-left: 0 !important; align-self: flex-start; }
+            .macro-title-text { font-size: 1rem !important; }
         }
         
         @media print {
@@ -241,9 +268,15 @@
     <div class="row">
         <!-- Main Content (Sections) -->
         <div class="col-lg-8" id="sectionsContainer">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="h4 m-0">Modulübersicht</h2>
-                <div class="d-flex gap-2">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                <h2 class="h4 m-0 d-flex align-items-center">
+                    Modulübersicht
+                    <div class="ms-3 d-none d-md-flex gap-1" style="font-size: 0.8rem;">
+                        <button class="btn btn-sm btn-light border" onclick="toggleAll(true)"><i class="fas fa-expand-alt text-muted"></i> Alle aufklappen</button>
+                        <button class="btn btn-sm btn-light border" onclick="toggleAll(false)"><i class="fas fa-compress-alt text-muted"></i> Alle zuklappen</button>
+                    </div>
+                </h2>
+                <div class="d-flex gap-2 mt-2 mt-md-0">
                     <input type="file" id="importFile" class="d-none" accept=".json,.xml" onchange="importData(event)">
                     <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('importFile').click()">
                         <i class="fas fa-file-import"></i> Importieren
@@ -340,6 +373,19 @@
     let isFirstRender = true;
     let collapseState = {};
 
+    function toggleAll(show) {
+        MACRO_SECTIONS.forEach((macro, macroIdx) => {
+            const macroId = `collapse-macro-${macroIdx}`;
+            collapseState[macroId] = show;
+            macro.subTypes.forEach((_, sectionIdx) => {
+                const sectionId = `collapse${macroIdx}-${sectionIdx}`;
+                collapseState[sectionId] = show;
+            });
+        });
+        isFirstRender = false;
+        renderSections();
+    }
+
     function renderSections() {
         const container = document.getElementById("courseSections");
         
@@ -396,14 +442,28 @@
                 macroBadgeText = `${macroPassedEcts} / 12 LP`;
             }
 
+            let macroDivPercent = macroEcts > 0 ? Math.min(100, Math.round((macroPassedEcts / macroEcts) * 100)) : 0;
+            if(macro.title.includes("Wahlpflichtbereich")) macroDivPercent = Math.min(100, Math.round((macroPassedEcts / 16) * 100));
+            if(macro.title.includes("Wahlbereich")) macroDivPercent = Math.min(100, Math.round((macroPassedEcts / 32) * 100));
+
             macroDiv.innerHTML = `
-                <div class="p-3 bg-light rounded border border-secondary shadow-sm mb-3 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#${macroId}" style="cursor: pointer; border-left: 6px solid var(--rptu-blue) !important;">
-                    <h2 class="h5 m-0 d-flex align-items-center text-uppercase fw-bold" style="color: var(--rptu-blue)">
-                        ${macro.title} 
-                        <span class="badge ms-2" style="background-color: var(--rptu-red); font-size: 0.85rem;">${macroBadgeText}</span>
-                        ${editBtnHtml}
-                    </h2>
-                    <i class="fas fa-chevron-down text-muted"></i>
+                <div class="p-3 bg-white rounded border shadow-sm mb-3 position-relative overflow-hidden" data-bs-toggle="collapse" data-bs-target="#${macroId}" style="cursor: pointer; border-left: 6px solid var(--rptu-blue) !important; transition: all 0.2s;">
+                    <div class="d-flex justify-content-between align-items-center w-100 flex-wrap">
+                        <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
+                            <h2 class="h5 m-0 text-uppercase fw-bold" style="color: var(--rptu-blue)">
+                                ${macro.title} 
+                            </h2>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge" style="background-color: var(--rptu-red); font-size: 0.85rem;">${macroBadgeText}</span>
+                                ${editBtnHtml}
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down text-muted mt-2 mt-md-0" style="transition: transform 0.3s;" id="icon-${macroId}"></i>
+                    </div>
+                    <!-- Micro Progress Bar -->
+                    <div class="progress position-absolute bottom-0 start-0 w-100 rounded-0" style="height: 4px;">
+                        <div class="progress-bar" role="progressbar" style="width: ${macroDivPercent}%; background-color: var(--rptu-blue);"></div>
+                    </div>
                 </div>
                 <div id="${macroId}" class="collapse ${isMacroOpen ? 'show' : ''} px-2">
                     <div id="macro-body-${macroIdx}"></div>
@@ -437,15 +497,16 @@
                 sectionDiv.className = "section-card mb-3";
                 // Let's use a nested visual style
                 sectionDiv.innerHTML = `
-                    <div class="section-header" data-bs-toggle="collapse" data-bs-target="#${sectionId}">
-                        <h3 style="font-size: 1.1rem;">${type} 
-                            <span class="badge bg-success ms-2 text-white" style="font-size: 0.75rem;" title="Bestanden">${passedEcts} LP</span>
+                    <div class="p-2 mb-2 bg-light rounded shadow-sm d-flex justify-content-between align-items-center flex-wrap" data-bs-toggle="collapse" data-bs-target="#${sectionId}" style="cursor: pointer; transition: background 0.2s;">
+                        <h3 class="m-0 d-flex flex-wrap align-items-center gap-2" style="font-size: 1.1rem; color: var(--rptu-blue);">
+                            ${type} 
+                            <span class="badge bg-success text-white" style="font-size: 0.75rem;" title="Bestanden">${passedEcts} LP</span>
                             ${limitBadge}
                         </h3>
-                        <i class="fas fa-chevron-down text-muted"></i>
+                        <i class="fas fa-chevron-down text-muted mt-2 mt-md-0" style="transition: transform 0.3s;" id="icon-${sectionId}"></i>
                     </div>
                     <div id="${sectionId}" class="collapse ${isSectionOpen ? 'show' : ''}">
-                        <div class="section-body p-3" id="sec-body-${macroIdx}-${sectionIdx}">
+                        <div class="section-body p-2 p-md-3 bg-white border border-top-0 rounded-bottom mb-3" id="sec-body-${macroIdx}-${sectionIdx}">
                             <div class="d-none d-md-flex fw-bold text-muted small pb-2 mb-2" style="padding: 0 20px; gap: 15px;">
                                 <div class="course-name">Modul</div>
                                 <div class="course-ects">LP</div>
