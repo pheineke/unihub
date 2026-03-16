@@ -445,8 +445,8 @@
             macroDiv.style.boxShadow = "none";
             
             // Determine previous state to avoid annoying re-opening
-            let macroId = `macroCollapse${macroIdx}`;
-            let isMacroOpen = isFirstRender ? true : (collapseState[macroId] !== false);
+            let macroId = `collapse-macro-${macroIdx}`;
+            let isMacroOpen = collapseState.hasOwnProperty(macroId) ? collapseState[macroId] : true;
             
             let editBtnHtml = '';
             let macroBadgeText = `${macroPassedEcts} / ${macroEcts} LP`;
@@ -527,7 +527,7 @@
                 }
 
                 let sectionId = `collapse${macroIdx}-${sectionIdx}`;
-                let isSectionOpen = isFirstRender ? true : (collapseState[sectionId] !== false);
+                let isSectionOpen = collapseState.hasOwnProperty(sectionId) ? collapseState[sectionId] : true;
                 
                 const sectionDiv = document.createElement("div");
                 sectionDiv.className = "section-card mb-3";
