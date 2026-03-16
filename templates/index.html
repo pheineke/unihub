@@ -112,6 +112,116 @@
             .course-row { flex-wrap: wrap; }
             .course-name { flex: 100%; margin-bottom: 10px; }
         }
+        
+        @media print {
+            .btn, button, input[type="file"], .fa-trash, .dropdown, .fa-chevron-down, .logo i, hr, .d-none {
+                display: none !important;
+            }
+            body {
+                background-color: white !important;
+                font-size: 10pt !important;
+                color: black !important;
+                padding: 15px !important;
+                margin: 0 !important;
+            }
+            .col-lg-8, .col-lg-4, .container {
+                width: 100% !important;
+                flex: none !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important; /* Managed by body padding now */
+            }
+            .col-lg-4 {
+                page-break-before: auto !important;
+                margin-top: 20px !important;
+                border-top: 2px solid black !important;
+                padding-top: 15px !important;
+            }
+            .collapse {
+                display: block !important;
+                height: auto !important;
+                visibility: visible !important;
+            }
+            select, input, .form-control, .input-group-text, .input-group {
+                border: none !important;
+                background: transparent !important;
+                appearance: none !important;
+                -webkit-appearance: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                color: black !important;
+                box-shadow: none !important;
+                height: auto !important;
+                line-height: 1.1 !important;
+                min-height: 0 !important;
+            }
+            .shadow-sm, .section-card, .p-3, .bg-light, .rounded, .border, .border-secondary {
+                box-shadow: none !important;
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            /* Macro Headers */
+            [data-bs-toggle="collapse"] {
+                border-bottom: 2px solid #000 !important;
+                margin-top: 5px !important;
+                margin-bottom: 2px !important;
+                padding-bottom: 2px !important;
+                border-left: none !important;
+            }
+            h2.h5 {
+                color: black !important;
+                font-size: 13pt !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                line-height: 1.2 !important;
+            }
+            /* Subsection Headers */
+            .section-header h3 {
+                color: #333 !important;
+                font-size: 11pt !important;
+                border-bottom: 1px solid #aaa !important;
+                margin-top: 5px !important;
+                margin-bottom: 2px !important;
+                padding-bottom: 2px !important;
+                line-height: 1.2 !important;
+            }
+            /* General Containers */
+            .mb-3, .mb-4 {
+                margin-bottom: 5px !important;
+            }
+            .mt-3, .mt-4 {
+                margin-top: 5px !important;
+            }
+            /* Course rows */
+            .course-row {
+                border-bottom: 1px dotted #ccc !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                align-items: center !important;
+                font-size: 9pt !important;
+                gap: 5px !important;
+                min-height: 0 !important;
+            }
+            .section-body {
+                padding: 0 5px !important;
+            }
+            .mb-2, .pb-2 {
+                margin-bottom: 0 !important;
+                padding-bottom: 0 !important;
+            }
+            /* Badges */
+            .badge {
+                border: 1px solid #000 !important;
+                color: #000 !important;
+                background: transparent !important;
+            }
+            .header {
+                border-bottom: 2px solid black !important;
+                box-shadow: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -133,11 +243,6 @@
         <div class="col-lg-8" id="sectionsContainer">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h2 class="h4">Modulübersicht</h2>
-                <div>
-                    <input type="file" id="importFile" class="d-none" accept=".json" onchange="importJSON(event)">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('importFile').click()"><i class="fas fa-file-import"></i> JSON Import</button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="exportJSON()"><i class="fas fa-file-export"></i> JSON Export</button>
-                </div>
             </div>
             
             <div id="courseSections"></div>
@@ -166,7 +271,26 @@
                     <li class="list-group-item text-muted text-center border-0">Noch keine Noten berechnet.</li>
                 </ul>
 
-                <button class="btn btn-primary w-100 mt-4" style="background-color: var(--rptu-blue); border: none;" onclick="calculateGPA()"><i class="fas fa-calculator me-2"></i> Jetzt berechnen</button>
+                <button class="btn btn-primary w-100 mt-4 mb-2" style="background-color: var(--rptu-blue); border: none;" onclick="calculateGPA()"><i class="fas fa-calculator me-2"></i> Jetzt berechnen</button>
+                
+                <hr class="mt-4 mb-4">
+                
+                <h5 class="h6 mb-3">Datenverwaltung</h5>
+                <input type="file" id="importFile" class="d-none" accept=".json,.xml" onchange="importData(event)">
+                <button class="btn btn-outline-secondary w-100 mb-2" onclick="document.getElementById('importFile').click()">
+                    <i class="fas fa-file-import me-1"></i> Importieren (JSON / XML)
+                </button>
+                
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-file-export me-1"></i> Exportieren als...
+                    </button>
+                    <ul class="dropdown-menu w-100 shadow-sm border-0" aria-labelledby="exportDropdown">
+                        <li><a class="dropdown-item" href="#" onclick="exportJSON(event)"><i class="fas fa-file-code me-2 text-muted"></i> JSON-Datei</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportXML(event)"><i class="fas fa-file-code me-2 text-muted"></i> XML-Datei</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportPDF(event)"><i class="fas fa-file-pdf me-2 text-danger"></i> PDF-Dokument</a></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -448,7 +572,8 @@
         }
     }
 
-    function exportJSON() {
+    function exportJSON(e) {
+        if(e) e.preventDefault();
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(courses, null, 2));
         const dlAnchorElem = document.createElement('a');
         dlAnchorElem.setAttribute("href",     dataStr     );
@@ -456,17 +581,72 @@
         dlAnchorElem.click();
     }
 
-    function importJSON(event) {
+    function exportXML(e) {
+        if(e) e.preventDefault();
+        let xmlStr = '<?xml version="1.0" encoding="UTF-8"?>\n<notenrechner>\n';
+        courses.forEach(c => {
+            xmlStr += '  <course>\n';
+            xmlStr += `    <name><![CDATA[${c.name}]]></name>\n`;
+            xmlStr += `    <ects>${c.ects || 0}</ects>\n`;
+            xmlStr += `    <type><![CDATA[${c.type}]]></type>\n`;
+            xmlStr += `    <grade>${c.grade || ''}</grade>\n`;
+            xmlStr += `    <status>${c.status || 'ausstehend'}</status>\n`;
+            xmlStr += `    <graded>${c.graded !== false}</graded>\n`;
+            xmlStr += `    <passed>${c.passed === true || c.status === 'bestanden'}</passed>\n`;
+            xmlStr += '  </course>\n';
+        });
+        xmlStr += '</notenrechner>';
+
+        const dataStr = "data:application/xml;charset=utf-8," + encodeURIComponent(xmlStr);
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", "notenschnitt_rptu.xml");
+        dlAnchorElem.click();
+    }
+
+    function exportPDF(e) {
+        if(e) e.preventDefault();
+        window.print();
+    }
+
+    function importData(event) {
         const file = event.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
-                courses = JSON.parse(e.target.result);
+                if (file.name.toLowerCase().endsWith('.xml')) {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+                    
+                    if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
+                        throw new Error("XML Parse Error");
+                    }
+                    
+                    const importedCourses = [];
+                    const courseNodes = xmlDoc.getElementsByTagName("course");
+                    for (let i = 0; i < courseNodes.length; i++) {
+                        const node = courseNodes[i];
+                        const getVal = (tag) => node.getElementsByTagName(tag)[0]?.textContent || "";
+                        importedCourses.push({
+                            name: getVal("name"),
+                            ects: parseFloat(getVal("ects")) || 0,
+                            type: getVal("type"),
+                            grade: getVal("grade"),
+                            status: getVal("status"),
+                            graded: getVal("graded") === "true",
+                            passed: getVal("passed") === "true"
+                        });
+                    }
+                    courses = importedCourses;
+                } else {
+                    // Fallback to JSON
+                    courses = JSON.parse(e.target.result);
+                }
                 renderSections();
             } catch (err) {
-                alert("Fehler beim Importieren der Datei.");
+                alert("Fehler beim Importieren der Datei. Bitte stelle sicher, dass es eine gültige JSON oder XML Datei ist.");
             }
         };
         reader.readAsText(file);
