@@ -242,7 +242,24 @@
         <!-- Main Content (Sections) -->
         <div class="col-lg-8" id="sectionsContainer">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="h4">Modulübersicht</h2>
+                <h2 class="h4 m-0">Modulübersicht</h2>
+                <div class="d-flex gap-2">
+                    <input type="file" id="importFile" class="d-none" accept=".json,.xml" onchange="importData(event)">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('importFile').click()">
+                        <i class="fas fa-file-import"></i> Importieren
+                    </button>
+                    
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-file-export"></i> Exportieren
+                        </button>
+                        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="exportDropdown">
+                            <li><a class="dropdown-item" href="#" onclick="exportJSON(event)"><i class="fas fa-file-code me-2 text-muted"></i> JSON</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportXML(event)"><i class="fas fa-file-code me-2 text-muted"></i> XML</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportPDF(event)"><i class="fas fa-file-pdf me-2 text-danger"></i> PDF Document</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             
             <div id="courseSections"></div>
@@ -272,25 +289,6 @@
                 </ul>
 
                 <button class="btn btn-primary w-100 mt-4 mb-2" style="background-color: var(--rptu-blue); border: none;" onclick="calculateGPA()"><i class="fas fa-calculator me-2"></i> Jetzt berechnen</button>
-                
-                <hr class="mt-4 mb-4">
-                
-                <h5 class="h6 mb-3">Datenverwaltung</h5>
-                <input type="file" id="importFile" class="d-none" accept=".json,.xml" onchange="importData(event)">
-                <button class="btn btn-outline-secondary w-100 mb-2" onclick="document.getElementById('importFile').click()">
-                    <i class="fas fa-file-import me-1"></i> Importieren (JSON / XML)
-                </button>
-                
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-file-export me-1"></i> Exportieren als...
-                    </button>
-                    <ul class="dropdown-menu w-100 shadow-sm border-0" aria-labelledby="exportDropdown">
-                        <li><a class="dropdown-item" href="#" onclick="exportJSON(event)"><i class="fas fa-file-code me-2 text-muted"></i> JSON-Datei</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="exportXML(event)"><i class="fas fa-file-code me-2 text-muted"></i> XML-Datei</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="exportPDF(event)"><i class="fas fa-file-pdf me-2 text-danger"></i> PDF-Dokument</a></li>
-                    </ul>
-                </div>
             </div>
         </div>
     </div>
@@ -564,7 +562,7 @@
                 const displayGpa = gpa > 0 ? gpa.toFixed(2) : "-";
                 
                 li.innerHTML = `
-                    <span class="text-truncate" style="max-width:200px;" title="${ctype}">${ctype.replace('Vertiefung: ', '')}</span> 
+                    <span class="me-3" style="word-break: break-word;">${ctype.replace('Vertiefung: ', '')}</span>
                     <span class="badge ${badgeClass} rounded-pill">${displayGpa}</span>
                 `;
                 typeList.appendChild(li);
