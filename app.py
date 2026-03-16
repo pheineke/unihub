@@ -60,6 +60,10 @@ def notenrechner():
 def pomodoro():
     return render_template("pomodoro.html")
 
+@app.route("/app/linkhub")
+def linkhub():
+    return render_template("linkhub.html")
+
 @app.route("/api/calculate", methods=["POST"])
 def calculate():
     data = request.json

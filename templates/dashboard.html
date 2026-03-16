@@ -3,9 +3,14 @@
 {% block title %}Dashboard | RPTU Students Hub{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-th-large me-2"></i> Deine Apps</h2>
-    <a href="/store" class="btn btn-primary"><i class="fas fa-plus me-1"></i> App hinzufügen</a>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <h2 class="m-0"><i class="fas fa-th-large me-2"></i> Deine Apps</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCustomTileModal">
+            <i class="fas fa-link me-1"></i> Eigenen Link anpinnen
+        </button>
+        <a href="/store" class="btn btn-primary"><i class="fas fa-plus me-1"></i> App hinzufügen</a>
+    </div>
 </div>
 
 <div class="row" id="dashboard-apps">
@@ -17,18 +22,87 @@
         <a href="/store" class="btn btn-outline-primary mt-2">Zum App Store</a>
     </div>
 </div>
+
+<!-- Add Custom Tile Modal -->
+<div class="modal fade" id="addCustomTileModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header text-white" style="background-color: var(--rptu-blue);">
+        <h5 class="modal-title"><i class="fas fa-link me-2"></i>Eigenes Lesezeichen anpinnen</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addCustomTileForm">
+            <div class="mb-3">
+                <label for="tileName" class="form-label fw-bold">Name</label>
+                <input type="text" class="form-control" id="tileName" placeholder="z.B. Google" required>
+            </div>
+            <div class="mb-3">
+                <label for="tileUrl" class="form-label fw-bold">URL</label>
+                <input type="url" class="form-control" id="tileUrl" placeholder="https://" required>
+            </div>
+            <div class="mb-3">
+                <label for="tileDesc" class="form-label fw-bold">Beschreibung (Optional)</label>
+                <input type="text" class="form-control" id="tileDesc" placeholder="Meine Suchmaschine...">
+            </div>
+            <div class="mb-3">
+                <label for="tileIconType" class="form-label fw-bold">Icon-Typ</label>
+                <select class="form-select" id="tileIconType" onchange="toggleIconInput()">
+                    <option value="fa">FontAwesome (Standard)</option>
+                    <option value="url">Bild-URL (Eigenes Bild)</option>
+                </select>
+            </div>
+            <div class="mb-3" id="iconFaWrapper">
+                <label for="tileIcon" class="form-label fw-bold">Icon (FontAwesome)</label>
+                <select class="form-select" id="tileIcon">
+                    <option value="fa-link">Link</option>
+                    <option value="fa-globe">Globe / Web</option>
+                    <option value="fa-laptop-code">Internet / Code</option>
+                    <option value="fa-star">Stern</option>
+                    <option value="fa-book">Buch</option>
+                    <option value="fa-tools">Werkzeug</option>
+                    <option value="fa-folder">Ordner</option>
+                </select>
+            </div>
+            <div class="mb-3" id="iconUrlWrapper" style="display: none;">
+                <label for="tileImageUrl" class="form-label fw-bold">Bild-URL</label>
+                <input type="url" class="form-control" id="tileImageUrl" placeholder="https://example.com/icon.png">
+                <small class="text-muted">Empfohlenes Format: 1:1, z.B. 128x128px</small>
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer" style="background: var(--bg-card); border-color: var(--bs-border-color);">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
+        <button type="button" class="btn btn-primary" onclick="saveCustomTile()">Erstellen</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    function getCustomTiles() {
+        return JSON.parse(localStorage.getItem('customTiles') || '[]');
+    }
+
+    function renderDashboard() {
         const installedAppIds = getInstalledApps();
+        const customTiles = getCustomTiles();
         const container = document.getElementById('dashboard-apps');
         const emptyState = document.getElementById('empty-state');
 
-        if (installedAppIds.length === 0) {
+        // Clear existing (except empty state)
+        Array.from(container.children).forEach(child => {
+            if (child.id !== 'empty-state') child.remove();
+        });
+
+        if (installedAppIds.length === 0 && customTiles.length === 0) {
             emptyState.style.display = 'block';
         } else {
+            emptyState.style.display = 'none';
+
+            // Render official apps
             installedAppIds.forEach(id => {
                 if (appsInfo[id]) {
                     const app = appsInfo[id];
@@ -47,18 +121,96 @@
                     container.appendChild(appCard);
                 }
             });
+
+            // Render custom tiles
+            customTiles.forEach(tile => {
+                const appCard = document.createElement('div');
+                appCard.className = 'col-md-4 col-sm-6 mb-4';
+                
+                let iconHtml = '';
+                if (tile.iconType === 'url' && tile.imageUrl) {
+                    iconHtml = `<img src="${tile.imageUrl}" alt="${tile.name}" class="app-icon" style="height: 3rem; width: auto; object-fit: contain; display: block; margin: 0 auto 15px auto;">`;
+                } else {
+                    iconHtml = `<i class="fas ${tile.icon} app-icon text-secondary"></i>`;
+                }
+
+                appCard.innerHTML = `
+                    <div class="app-card p-4 text-center position-relative">
+                        <button class="btn text-danger position-absolute top-0 end-0 m-2 border-0 bg-transparent" title="Entfernen" onclick="removeCustomTile('${tile.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        ${iconHtml}
+                        <h4>${tile.name}</h4>
+                        <p class="text-muted small flex-grow-1">${tile.description || tile.url}</p>
+                        <div class="d-flex gap-2 mt-3">
+                            <a href="${tile.url}" target="_blank" class="btn btn-outline-primary flex-grow-1">
+                                <i class="fas fa-external-link-alt me-1"></i> Öffnen
+                            </a>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(appCard);
+            });
         }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderDashboard();
     });
 
-    function removeApp(id, btnElement) {
-        if(confirm('Möchtest du diese App wirklich vom Dashboard entfernen?')) {
-            uninstallApp(id);
-            const card = btnElement.closest('.col-md-4');
-            card.remove();
-            
-            if (getInstalledApps().length === 0) {
-                document.getElementById('empty-state').style.display = 'block';
-            }
+    function toggleIconInput() {
+        const type = document.getElementById('tileIconType').value;
+        if (type === 'url') {
+            document.getElementById('iconFaWrapper').style.display = 'none';
+            document.getElementById('iconUrlWrapper').style.display = 'block';
+        } else {
+            document.getElementById('iconFaWrapper').style.display = 'block';
+            document.getElementById('iconUrlWrapper').style.display = 'none';
+        }
+    }
+
+    function saveCustomTile() {
+        const title = document.getElementById('tileName').value;
+        const url = document.getElementById('tileUrl').value;
+        const desc = document.getElementById('tileDesc').value;
+        
+        const iconType = document.getElementById('tileIconType').value;
+        const icon = document.getElementById('tileIcon').value;
+        const imageUrl = document.getElementById('tileImageUrl').value;
+
+        if (!title || !url) {
+            alert('Bitte Name und URL ausfüllen.');
+            return;
+        }
+
+        const newTile = {
+            id: Date.now().toString(),
+            name: title,
+            url: url,
+            description: desc,
+            iconType: iconType,
+            icon: icon,
+            imageUrl: imageUrl
+        };
+
+        const tiles = getCustomTiles();
+        tiles.push(newTile);
+        localStorage.setItem('customTiles', JSON.stringify(tiles));
+        
+        renderDashboard();
+        
+        document.getElementById('addCustomTileForm').reset();
+        toggleIconInput(); // reset to default view
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addCustomTileModal'));
+        modal.hide();
+    }
+
+    function removeCustomTile(id) {
+        if(confirm('Möchtest du dieses Lesezeichen wirklich vom Dashboard entfernen?')) {
+            let tiles = getCustomTiles();
+            tiles = tiles.filter(t => t.id !== id);
+            localStorage.setItem('customTiles', JSON.stringify(tiles));
+            renderDashboard();
         }
     }
 </script>
