@@ -675,10 +675,22 @@
             typeList.innerHTML = `<li class="list-group-item text-muted text-center border-0">Noch keine Noten berechnet.</li>`;
             return;
         }
+
+        const orderedTypes = [];
+        MACRO_SECTIONS.forEach(macro => {
+            macro.subTypes.forEach(t => orderedTypes.push(t));
+        });
         
-        for (const [ctype, gpa] of Object.entries(result.gpas_by_type)) {
-            // Only show sections where the student passed something
-            if (result.details[ctype].ects_passed > 0) {
+        const rendered = new Set();
+        
+        const renderType = (ctype) => {
+            if (rendered.has(ctype)) return;
+            rendered.add(ctype);
+            
+            const gpa = result.gpas_by_type[ctype];
+            const details = result.details[ctype];
+            
+            if (details && details.ects_passed > 0) {
                 const li = document.createElement("li");
                 li.className = "list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent";
                 
@@ -691,6 +703,16 @@
                 `;
                 typeList.appendChild(li);
             }
+        };
+
+        orderedTypes.forEach(t => {
+            if (result.gpas_by_type.hasOwnProperty(t)) {
+                renderType(t);
+            }
+        });
+
+        for (const ctype of Object.keys(result.gpas_by_type)) {
+            renderType(ctype);
         }
     }
 
