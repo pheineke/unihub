@@ -3,8 +3,8 @@ FROM python:3.11-slim
 
 # Set environment variables to prevent Python from writing .pyc files
 # and to ensure stdout and stderr are not buffered
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Create and set work directory
 WORKDIR /app
